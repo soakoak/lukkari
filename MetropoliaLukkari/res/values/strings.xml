@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Metropolia Lukkari</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="group_name">Ryhmätunnus</string>
+    <string name="search">Hae</string>
+    <string name="empty_string"></string>
+
+</resources>
