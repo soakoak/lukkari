@@ -4,8 +4,6 @@
     android:versionCode="1"
     android:versionName="1.0" >
 
-    <!-- Alin versio mihin foreign keyt pystyvät on 8 -->
-    <!-- Alin versio mihin fragmentit pystyvät (ilman support library) on 11 -->
     <uses-sdk
         android:minSdkVersion="11"
         android:targetSdkVersion="19" />
