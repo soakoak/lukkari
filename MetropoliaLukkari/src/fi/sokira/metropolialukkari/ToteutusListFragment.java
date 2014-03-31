@@ -34,7 +34,7 @@ public class ToteutusListFragment extends ListFragment {
 				R.layout.fragment_impl_list_item, 
 				from, 
 				to);
-		setListAdapter(adapter);
+		setListAdapter(adapter);	
 		
 		return v;
 	}
