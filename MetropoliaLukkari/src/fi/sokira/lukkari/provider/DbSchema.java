@@ -3,7 +3,7 @@ package fi.sokira.lukkari.provider;
 import android.provider.BaseColumns;
 
 
-interface DbSchema {
+public interface DbSchema {
 	
 	final static String DATABASE_NAME = "lukkari.db";
 

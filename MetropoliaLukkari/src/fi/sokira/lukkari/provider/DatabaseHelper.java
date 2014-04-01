@@ -1,6 +1,11 @@
 package fi.sokira.lukkari.provider;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import android.content.Context;
+import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
@@ -11,6 +16,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	private final static int VERSION = 1;
 	
 	private static final String TAG = "DatabaseHelper";
+	
+	private final static String[] TABLES = {
+			DbSchema.TBL_LUKKARI,
+			DbSchema.TBL_TOTEUTUS,
+			DbSchema.TBL_LUKKARI_TO_TOTEUTUS,
+			DbSchema.TBL_VARAUS
+		};
 	
 	public DatabaseHelper(Context context) {
 		super(context, NAME, null, VERSION);
@@ -29,15 +41,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 			db.execSQL( op);
 		}
 		
-		String[] tables = {
-			DbSchema.TBL_LUKKARI,
-			DbSchema.TBL_TOTEUTUS,
-			DbSchema.TBL_LUKKARI_TO_TOTEUTUS,
-			DbSchema.TBL_VARAUS
-		};
-		
-		for( String tbl : tables) {
-			DBUtils.printTableInfo(db, tbl);
+		for( String tbl : TABLES) {
+			printTableInfo(db, tbl);
 		}
 	}
 
@@ -53,12 +58,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				DbSchema.DROP_TBL_VARAUS
 		};
 		
-		db.execSQL( "BEGIN TRANSACTION");
-		for( String dropStmt : dropStatements) {
-			db.execSQL( dropStmt);
+		int i = 0;
+		String select = "SELECT COUNT(*) FROM ";
+		db.beginTransaction();
+		try {
+			for(i = TABLES.length - 1; i >= 0; i--) {
+				Cursor c = db.rawQuery(select + TABLES[i], new String[]{});
+				c.moveToFirst();
+				Log.d(TAG, "Table " + TABLES[i] + " entry count: " + c.getInt(0));
+				if( c.getInt(0) > 0); 
+					db.execSQL( dropStatements[i]);
+			}
+			db.setTransactionSuccessful();
+		} catch (SQLException e) {
+			Log.d(TAG, "Error while dropping tables. "
+					+ "Sentence error came in was: " + dropStatements[i]);
+		} finally {
+			db.endTransaction();
 		}
-		db.execSQL( "END TRANSACTION");
-
+		
 		// TODO http://stackoverflow.com/a/3505944
 
 		onCreate(db);
@@ -73,6 +91,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		super.onOpen(db);
 		if( !db.isReadOnly()) {
 			db.execSQL( "PRAGMA foreign_keys=ON;");
+		}
+	}
+	
+	public static List<String> getColumns(SQLiteDatabase db, String tableName) {
+		List<String> cols = new ArrayList<String>();
+		
+		//TODO toteutus
+		
+		return cols;
+	}
+	
+	public static void printTableInfo(SQLiteDatabase db, String tableName) {
+		Cursor c = db.rawQuery("PRAGMA table_info(" + tableName + ")", null);
+		
+		Log.d(TAG, "Table " + tableName + " column count: " + c.getCount());
+		StringBuilder s = new StringBuilder();
+		
+		while(c.moveToNext()) {
+			Log.d(TAG, "Column " + c.getPosition() + " info:");
+			
+			for(int i = 0; i < c.getColumnCount(); i++) {
+				s.append(c.getString(i));
+				s.append(" ");
+			}
+			
+			Log.d(TAG, s.toString());
+			s.delete(0, s.length());
 		}
 	}
 	
