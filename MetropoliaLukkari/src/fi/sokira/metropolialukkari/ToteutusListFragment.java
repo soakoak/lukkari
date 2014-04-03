@@ -41,8 +41,8 @@ public class ToteutusListFragment extends ListFragment {
 	
 	private List<Map<String,String>> buildData() {
 		List<Map<String,String>> list = new ArrayList<Map<String,String>>();
-		list.add(putData("KÃ¤yttÃ¶jÃ¤rjestelmÃ¤t", "TO10"));
-		list.add(putData("PelitekoÃ¤lyt", "TO11K"));
+		list.add(putData("Käyttöjärjestelmät", "TO10"));
+		list.add(putData("Pelitekoälyt", "TO11K"));
 		list.add(putData("Android ohjelmointi", "TO10"));
 		list.add(putData("Ammatillinen englanti", "T13M"));
 		return list;
