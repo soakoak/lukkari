@@ -51,14 +51,14 @@ public class LukkariActivity extends Activity
 			
 			try {
 				ContentValues values = new ContentValues();
-				values.put(DbSchema.COL_NIMI, "testilukkari");
+				values.put(DbSchema.COL_NAME, "testilukkari");
 				long lkrId = db.insert( DbSchema.TBL_LUKKARI, null, values);
 				Log.d(TAG, "Lukkari row id: " + lkrId);
 				
 				values.clear();
-				values.put(DbSchema.COL_RYHMATUNNUS, "TO11K");
-				values.put(DbSchema.COL_NIMI, "Pelitekoälyt");
-				values.put(DbSchema.COL_LOPPU_PVM, System.currentTimeMillis());
+				values.put(DbSchema.COL_STUDENT_GROUPS, "TO11K");
+				values.put(DbSchema.COL_NAME, "Pelitekoälyt");
+				values.put(DbSchema.COL_END_DATE, System.currentTimeMillis());
 				long totId = db.insert( DbSchema.TBL_TOTEUTUS, null, values);
 				Log.d( TAG, "Toteutus row id: " + totId);
 				
@@ -70,7 +70,7 @@ public class LukkariActivity extends Activity
 				values.clear();
 				values.put(DbSchema.COL_ID_TOTEUTUS, totId);
 				values.put(DbSchema.COL_TILA, "U204");
-				values.put(DbSchema.COL_LOPPU_PVM, System.currentTimeMillis());
+				values.put(DbSchema.COL_END_DATE, System.currentTimeMillis());
 				db.insert(DbSchema.TBL_VARAUS, null, values);
 				
 				db.setTransactionSuccessful();
