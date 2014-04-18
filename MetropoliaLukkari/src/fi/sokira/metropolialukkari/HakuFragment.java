@@ -34,6 +34,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import fi.sokira.metropolialukkari.models.Realization;
+import fi.sokira.metropolialukkari.models.RealizationResult;
+
 public class HakuFragment extends Fragment implements OnClickListener {
 	
 	private EditText groupInput = null;
@@ -183,23 +189,36 @@ public class HakuFragment extends Fragment implements OnClickListener {
 				e.printStackTrace();
 			} 
 			
+			String resultStr = "noResult";
+			
 			if( response != null) {
 				try {
-					
-					return EntityUtils.toString( response.getEntity(), charset);
+					resultStr = EntityUtils.toString( response.getEntity(), charset);
 				} catch (ParseException e) {
 					e.printStackTrace();
 				} catch (IOException e) {
 					e.printStackTrace();
-				}
+				} 
 			}
 			
-			return "noResult";
+			return resultStr;
 		}
 		
 		@Override
 		protected void onPostExecute(String result) {
-			Log.d(TAG, "Result: " + result);
+			Gson gson = new GsonBuilder()
+				.setDateFormat("yyyy-MM-dd'T'HH:mm")
+				.disableHtmlEscaping()
+				.create();
+
+			Log.d(TAG, "Result string length: " + result.length());
+			RealizationResult realzResult = gson.fromJson(result, RealizationResult.class);
+			
+			Log.d(TAG, "Number of results: " + realzResult.getRealizations().size());
+			for( Realization realz : realzResult.getRealizations())
+			{
+			Log.d(TAG, "Realization name: " + realz.getName());
+			}
 		}
 		
 		JSONArray asJsonArray( String[] strings) {
