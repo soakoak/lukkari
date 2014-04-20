@@ -12,6 +12,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import fi.sokira.lukkari.provider.DatabaseHelper;
 import fi.sokira.lukkari.provider.DbSchema;
+import fi.sokira.metropolialukkari.models.Result;
 
 public class LukkariActivity extends Activity
 		implements
@@ -105,10 +106,16 @@ public class LukkariActivity extends Activity
 
 	@Override
 	public void onSearchInitiated() {
-		getFragmentManager()
-			.beginTransaction()
-			.replace(android.R.id.content, new ToteutusListFragment())
-			.addToBackStack( null)
-			.commit();
+//		getFragmentManager()
+//			.beginTransaction()
+//			.replace(android.R.id.content, new ToteutusListFragment())
+//			.addToBackStack( null)
+//			.commit();
+	}
+	
+	@Override
+	public void onSearchFinished(Result result, int resultType) {
+		// TODO Resultin näyttäminen.
+		Log.d(TAG, "Result get.");
 	}
 }
