@@ -1,12 +1,12 @@
 package fi.sokira.metropolialukkari.models;
 
-import java.util.List;
+import java.util.ArrayList;
 
 public class RealizationResult implements Result {
 
-	public List<Realization> realizations;
+	public ArrayList<Realization> realizations;
 
-	public List<Realization> getRealizations() {
+	public ArrayList<Realization> getRealizations() {
 		return realizations;
 	}
 }
