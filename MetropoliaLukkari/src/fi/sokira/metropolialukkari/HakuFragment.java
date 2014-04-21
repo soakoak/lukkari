@@ -85,7 +85,6 @@ public class HakuFragment extends Fragment implements OnClickListener {
 			NetworkInfo netInfo = connMgr.getActiveNetworkInfo();
 			
 			if( netInfo != null && netInfo.isConnected()) {
-//				new LukkariWebLoadTask().execute( "https://opendata.metropolia.fi/r1/reservation/search");
 				Bundle args = new Bundle(16);
 				args.putStringArray( 
 						LukkariWebLoadTask.VALUE_STUDENT_GROUPS, 

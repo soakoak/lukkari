@@ -12,6 +12,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import fi.sokira.lukkari.provider.DatabaseHelper;
 import fi.sokira.lukkari.provider.DbSchema;
+import fi.sokira.metropolialukkari.HakuFragment.OnSearchListener;
+import fi.sokira.metropolialukkari.models.RealizationResult;
 import fi.sokira.metropolialukkari.models.Result;
 
 public class LukkariActivity extends Activity
@@ -115,7 +117,26 @@ public class LukkariActivity extends Activity
 	
 	@Override
 	public void onSearchFinished(Result result, int resultType) {
-		// TODO Resultin näyttäminen.
 		Log.d(TAG, "Result get.");
+		
+		ToteutusListFragment frag = new ToteutusListFragment();
+		
+		if( resultType == OnSearchListener.RESULT_REALIZATION) {
+			Bundle args = new Bundle(2);
+			args.putParcelableArrayList( 
+					ToteutusListFragment.ARG_RESULT, 
+					((RealizationResult) result).getRealizations());
+			args.putInt( 
+					ToteutusListFragment.ARG_RESULT_TYPE, 
+					ToteutusListFragment.TYPE_REALIZATION);
+			
+			frag.setArguments( args);
+		}
+		
+		getFragmentManager()
+			.beginTransaction()
+			.replace(android.R.id.content, frag)
+			.addToBackStack( null)
+			.commit();
 	}
 }
