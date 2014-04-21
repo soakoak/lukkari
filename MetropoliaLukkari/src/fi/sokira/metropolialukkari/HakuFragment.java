@@ -2,6 +2,11 @@ package fi.sokira.metropolialukkari;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.text.DateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
@@ -13,11 +18,9 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.app.Activity;
+import android.app.DatePickerDialog;
 import android.app.Fragment;
 import android.content.Context;
 import android.net.ConnectivityManager;
@@ -30,19 +33,25 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import fi.sokira.metropolialukkari.models.MetropoliaQuery;
 import fi.sokira.metropolialukkari.models.Realization;
+import fi.sokira.metropolialukkari.models.RealizationQuery;
 import fi.sokira.metropolialukkari.models.RealizationResult;
 import fi.sokira.metropolialukkari.models.Result;
 
-public class HakuFragment extends Fragment implements OnClickListener {
+public class HakuFragment extends Fragment 
+						implements OnClickListener,
+							DatePickerDialog.OnDateSetListener {
 	
 	private EditText groupInput = null;
+	private EditText startDateInput = null;
 	
 	private OnSearchListener listener = null;
 	
@@ -66,10 +75,15 @@ public class HakuFragment extends Fragment implements OnClickListener {
 			Bundle savedInstanceState) {
 		View v = inflater.inflate(R.layout.fragment_haku, container, false);
 		
-		groupInput = (EditText) v.findViewById( R.id.input_group);
+		startDateInput = (EditText) v.findViewById( R.id.input_start_date);
+		startDateInput.setOnClickListener( this);
 		
+		groupInput = (EditText) v.findViewById( R.id.input_group);
 		Button searchBtn = (Button) v.findViewById( R.id.search_button);
 		searchBtn.setOnClickListener( this);
+		
+		Button clearBtn = (Button) v.findViewById( R.id.button_clear);
+		clearBtn.setOnClickListener( this);
 		
 		return v;
 	}
@@ -78,32 +92,61 @@ public class HakuFragment extends Fragment implements OnClickListener {
 	public void onClick(View v) {
 		switch( v.getId()) {
 		case R.id.search_button :
-			Toast.makeText(getActivity(), "Haetaan data from internets", Toast.LENGTH_SHORT).show();
-			
 			ConnectivityManager connMgr = 
-				(ConnectivityManager) getActivity().getSystemService( Context.CONNECTIVITY_SERVICE);
+				(ConnectivityManager) getActivity().getSystemService( 
+						Context.CONNECTIVITY_SERVICE);
 			NetworkInfo netInfo = connMgr.getActiveNetworkInfo();
 			
 			if( netInfo != null && netInfo.isConnected()) {
-				Bundle args = new Bundle(16);
-				args.putStringArray( 
-						LukkariWebLoadTask.VALUE_STUDENT_GROUPS, 
-						new String[]{ 
-							groupInput.getText().toString()
-						});
+				RealizationQuery query = new RealizationQuery();
+				query.setStudentGroups( Arrays.asList(
+						groupInput.getText().toString()));
+				Date date = null;
+				try {
+					date = DateFormat.getDateInstance().parse(
+							startDateInput.getText().toString());
+				} catch (java.text.ParseException e) {
+					e.printStackTrace();
+				}
+				query.setStartDate( date);
 				
 				Log.d(TAG, groupInput.getText().toString());
 			
-				LukkariWebLoadTask task = new LukkariWebLoadTask( LukkariWebLoadTask.QUERY_REALIZATION);
-				task.execute( args);
-
-				Toast.makeText(getActivity(), "We have data.", Toast.LENGTH_LONG).show();
+				LukkariWebLoadTask task = 
+						new LukkariWebLoadTask( LukkariWebLoadTask.QUERY_REALIZATION);
+				task.execute( query);
+				
+				listener.onSearchInitiated();
 			} else {
-				Toast.makeText(getActivity(), "Aaaaaand it's gone.", Toast.LENGTH_LONG).show();
+				Toast.makeText(getActivity(), "Virhe muodostaessa yhteyttä.", Toast.LENGTH_LONG).show();
 			}
 			
-//			listener.onSearchInitiated();
-			groupInput.setText( "");
+			break;
+		case R.id.input_start_date:
+			Calendar cal = Calendar.getInstance();
+			
+			if( !startDateInput.getText().toString().isEmpty()) {			 
+				Date date = null;
+				try {
+					date = DateFormat.getDateInstance().parse( 
+							startDateInput.getText().toString());
+					cal.setTime(date);
+				} catch (java.text.ParseException e) {
+					e.printStackTrace();
+				}
+			}
+			
+			new DatePickerDialog(
+					getActivity(), 
+					this, 
+					cal.get( Calendar.YEAR), 
+					cal.get( Calendar.MONTH), 
+					cal.get( Calendar.DAY_OF_MONTH)).show();
+			
+			break;
+		case R.id.button_clear:
+			startDateInput.setText("");
+			groupInput.setText("");
 			break;
 		default :
 			break;
@@ -120,20 +163,17 @@ public class HakuFragment extends Fragment implements OnClickListener {
 		public void onSearchFinished( Result result, int resultType);
 	}
 	
-	private class LukkariWebLoadTask extends AsyncTask<Bundle, Void, RealizationResult> {
+	private class LukkariWebLoadTask extends AsyncTask<MetropoliaQuery, Void, RealizationResult> {
 		
 		public static final int QUERY_RESERVATION = 1;
 		public static final int QUERY_REALIZATION = 2;
-		
-		public static final String VALUE_NAME = "name";
-		public static final String VALUE_START_DATE = "startDate";
-		public static final String VALUE_END_DATE = "endDate";
-		public static final String VALUE_STUDENT_GROUPS = "studentGroups";
 
 		private static final String TAG = "LukkariWebLoadTask";
 		
-		private static final String reservationServiceUrl = "https://opendata.metropolia.fi/r1/reservation";
-		private static final String realizationServiceUrl = "https://opendata.metropolia.fi/r1/realization";
+		private static final String reservationServiceUrl = 
+				"https://opendata.metropolia.fi/r1/reservation";
+		private static final String realizationServiceUrl = 
+				"https://opendata.metropolia.fi/r1/realization";
 		
 		private int queryType;
 		
@@ -142,7 +182,7 @@ public class HakuFragment extends Fragment implements OnClickListener {
 		}
 		
 		@Override
-		protected RealizationResult doInBackground(Bundle... params) {
+		protected RealizationResult doInBackground(MetropoliaQuery... params) {
 
 			String apikey = Secrets.METROPOLIA_API_KEY;
 			String contentType = "application/json";
@@ -155,40 +195,21 @@ public class HakuFragment extends Fragment implements OnClickListener {
 			HttpConnectionParams.setSoTimeout(clientParams, 30000);	
 			
 			HttpPost postMethod = null;
-			Bundle values = params[0];
-			JSONObject query = new JSONObject();
+			
+			Gson gson = new GsonBuilder()
+				.setDateFormat("yyyy-MM-dd'T'HH:mm")
+				.disableHtmlEscaping()
+				.create();
 			
 			switch( queryType) {
 			
 			case QUERY_REALIZATION:
 				postMethod = new HttpPost( realizationServiceUrl + "/search?apiKey=" + apikey);
 				
-				try {
-					if( values.containsKey( VALUE_NAME)) {
-						query.put( VALUE_NAME, values.getString( VALUE_NAME));
-					}
-					
-					if( values.containsKey( VALUE_START_DATE)) {
-						query.put(VALUE_START_DATE, values.getString( VALUE_START_DATE));
-					}
-					
-					if( values.containsKey( VALUE_END_DATE)) {
-						query.put( VALUE_END_DATE, values.getString( VALUE_END_DATE));
-					}
-					
-					if( values.containsKey( VALUE_STUDENT_GROUPS)) {
-						Log.d(TAG, "We have student groups");
-						query.put( VALUE_STUDENT_GROUPS, asJsonArray( values.getStringArray( VALUE_STUDENT_GROUPS)));
-					}
-					
-					Log.d(TAG, "Written JSON: " + query.toString());
-				} catch (JSONException e) {
-					Log.e(TAG, "Error while writing JSON");
-					e.printStackTrace();
-				}
+				RealizationQuery query = (RealizationQuery) params[0];
 				
 				try {
-					StringEntity entity = new StringEntity( query.toString());
+					StringEntity entity = new StringEntity( gson.toJson( query));
 					entity.setContentType(contentType);
 					entity.setContentEncoding( charset);
 					postMethod.setEntity( entity);
@@ -208,10 +229,6 @@ public class HakuFragment extends Fragment implements OnClickListener {
 				if( response != null) {
 					try {
 						String resultStr = EntityUtils.toString( response.getEntity(), charset);
-						Gson gson = new GsonBuilder()
-							.setDateFormat("yyyy-MM-dd'T'HH:mm")
-							.disableHtmlEscaping()
-							.create();
 		
 						Log.d(TAG, "Result string length: " + resultStr.length());
 						RealizationResult realzResult = gson.fromJson(
@@ -254,14 +271,12 @@ public class HakuFragment extends Fragment implements OnClickListener {
 			}
 		}
 		
-		JSONArray asJsonArray( String[] strings) {
-			JSONArray vals = new JSONArray();
-			
-			for (String str : strings) {
-				vals.put( str);
-			}
-			
-			return vals;
-		}
+	}
+
+	@Override
+	public void onDateSet(DatePicker view, int year, int monthOfYear,
+			int dayOfMonth) {
+		Date date = new GregorianCalendar(year, monthOfYear, dayOfMonth).getTime();
+		startDateInput.setText( DateFormat.getDateInstance().format( date));
 	}
 }

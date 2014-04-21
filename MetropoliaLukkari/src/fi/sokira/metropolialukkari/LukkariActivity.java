@@ -108,11 +108,7 @@ public class LukkariActivity extends Activity
 
 	@Override
 	public void onSearchInitiated() {
-//		getFragmentManager()
-//			.beginTransaction()
-//			.replace(android.R.id.content, new ToteutusListFragment())
-//			.addToBackStack( null)
-//			.commit();
+		Log.d( TAG, "Haku aloitettu");
 	}
 	
 	@Override
