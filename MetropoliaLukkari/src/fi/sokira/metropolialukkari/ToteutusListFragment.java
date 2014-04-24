@@ -1,18 +1,29 @@
 package fi.sokira.metropolialukkari;
 
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import android.app.AlertDialog;
 import android.app.ListFragment;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import fi.sokira.metropolialukkari.models.Realization;
@@ -29,6 +40,35 @@ public class ToteutusListFragment extends ListFragment {
 	public static final int TYPE_RESERVATION = 1;
 	public static final int TYPE_REALIZATION = 2;
 	
+	private static final String TAG = ToteutusListFragment.class.getSimpleName();
+	
+	private int contentType = 0; 
+	private ActionMode actionMode = null;
+	
+	
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated( savedInstanceState);
+		
+		final ListView v = getListView();
+		v.setChoiceMode( ListView.CHOICE_MODE_SINGLE);
+		v.setOnItemLongClickListener( new AdapterView.OnItemLongClickListener(){
+
+			@Override
+			public boolean onItemLongClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				
+				if( actionMode == null) {
+					Log.d(TAG, "Action mode set");
+					actionMode = getActivity().startActionMode( actionModeCallback);
+				}
+				
+				v.setItemChecked( position, true);
+				return true;
+			}
+			
+		});
+	};
+
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -42,7 +82,9 @@ public class ToteutusListFragment extends ListFragment {
 		
 		Bundle args = getArguments();
 		
-		switch( args.getInt(ARG_RESULT_TYPE, TYPE_NO_TYPE)) {
+		contentType = args.getInt(ARG_RESULT_TYPE, TYPE_NO_TYPE);
+		
+		switch( contentType) {
 		
 		case TYPE_REALIZATION:
 			ArrayList<Realization> result = 
@@ -149,4 +191,96 @@ public class ToteutusListFragment extends ListFragment {
 			return v;
 		}
 	}
+
+	private ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
+		
+		@Override
+		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+			return false;
+		}
+		
+		@Override
+		public void onDestroyActionMode(ActionMode mode) {
+			ListView lv = getListView();
+			int selectPos = lv.getCheckedItemPosition();
+			lv.setItemChecked(selectPos, false);
+			actionMode = null;
+		}
+		
+		@Override
+		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+			MenuInflater inflater = getActivity().getMenuInflater();
+			inflater.inflate( R.menu.result_menu, menu);
+			return true;
+		}
+		
+		@Override
+		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+			
+			switch( item.getItemId()) {
+			case R.id.more_details :
+				LayoutInflater infl = getActivity().getLayoutInflater();
+				View v = null;
+				TextView text;
+				StringBuilder strb;
+				DateFormat df = DateFormat.getDateInstance();
+				
+				switch( contentType) {
+				case TYPE_REALIZATION :
+					int position = getListView().getCheckedItemPosition();
+					Realization relz = 
+							((RealizationAdapter) getListAdapter()).getItem( position);
+					
+					v = infl.inflate( R.layout.dialog_realization_details, null);
+					
+					text = (TextView) v.findViewById( R.id.code);
+					text.setText( text.getText() + ": " + relz.getCode());
+					
+					text = (TextView) v.findViewById( R.id.name);
+					text.setText( text.getText() + ": " + relz.getName());
+				
+					text = (TextView) v.findViewById( R.id.student_groups);
+					strb = new StringBuilder();
+					List<StudentGroup> grps = relz.getStudentGroups();
+					for( int i = 0; i < grps.size() - 1; i++) {
+						strb.append( grps.get(i).getCode());
+						strb.append( ", ");
+					}
+					strb.append( grps.get( grps.size() - 1).getCode());
+					text.setText( text.getText() + ": " + strb.toString());
+					
+					text = (TextView) v.findViewById( R.id.start_date);
+					text.setText( 
+							text.getText() + ": " + df.format( relz.getStartDate()));
+					
+					text = (TextView) v.findViewById( R.id.end_date);
+					text.setText( 
+							text.getText() + ": " + df.format( relz.getEndDate()));
+					
+					break;
+				case TYPE_NO_TYPE :
+					text = new TextView( getActivity());
+					text.setText("No data");
+					v = text;
+				}
+				
+				new AlertDialog.Builder( getActivity())
+					.setView( v)
+					.setPositiveButton("OK", new OnClickListener() {
+						
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							Log.d(TAG, "More details -dialog dismissed");
+						}
+					}).show();
+				
+				break;
+			default:
+				return false;
+			}
+			
+			mode.finish();
+			return true;
+		}
+	};
 }
