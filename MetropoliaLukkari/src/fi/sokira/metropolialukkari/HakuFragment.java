@@ -32,9 +32,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
@@ -48,7 +51,10 @@ import fi.sokira.metropolialukkari.models.Result;
 
 public class HakuFragment extends Fragment 
 						implements OnClickListener,
-							DatePickerDialog.OnDateSetListener {
+							DatePickerDialog.OnDateSetListener,
+							AdapterView.OnItemSelectedListener {
+	
+	private String[] spinnerChoices = null;
 	
 	private EditText groupInput = null;
 	private EditText startDateInput = null;
@@ -74,6 +80,14 @@ public class HakuFragment extends Fragment
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		View v = inflater.inflate(R.layout.fragment_haku, container, false);
+		
+		spinnerChoices = getResources().getStringArray( R.array.array_fetch_modes);
+		Spinner spinner = (Spinner) v.findViewById( R.id.spinner_mode);
+		spinner.setOnItemSelectedListener( this);
+		ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>(getActivity(), 
+				android.R.layout.simple_spinner_item, spinnerChoices);
+		adapter.setDropDownViewResource( android.R.layout.simple_spinner_dropdown_item);
+		spinner.setAdapter(adapter);
 		
 		startDateInput = (EditText) v.findViewById( R.id.input_start_date);
 		startDateInput.setOnClickListener( this);
@@ -278,5 +292,22 @@ public class HakuFragment extends Fragment
 			int dayOfMonth) {
 		Date date = new GregorianCalendar(year, monthOfYear, dayOfMonth).getTime();
 		startDateInput.setText( DateFormat.getDateInstance().format( date));
+	}
+
+	@Override
+	public void onItemSelected(AdapterView<?> parent, View view, int position,
+			long id) {		
+		Object item = parent.getItemAtPosition( position);
+		if( item.toString().equals( spinnerChoices[0])) {
+			//Realization: change layout
+		} else if( item.toString().equals( spinnerChoices[1])) {
+			//Reservation: change layout
+		}
+		Log.d(TAG, "Mode spinner: " + item.toString() + " selected.");
+	}
+
+	@Override
+	public void onNothingSelected(AdapterView<?> parent) {
+		Log.d(TAG, "Mode spinner: no selection made.");
 	}
 }
