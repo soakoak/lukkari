@@ -12,33 +12,66 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-
-        <EditText
-            android:id="@+id/input_start_date"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true"
-            android:ems="10"
-            android:focusable="false"
-            android:hint="@string/start_date"
-            android:inputType="none|date" />
-
-    </RelativeLayout>
-
-    <EditText
-        android:id="@+id/input_group"
+    <LinearLayout
+        android:id="@+id/realization_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/group_name"
-        android:inputType="textCapCharacters"
-        android:paddingTop="16dp" >
+        android:orientation="vertical"
+        android:visibility="visible" >
 
-        <requestFocus />
-    </EditText>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/reservation_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone" >
+
+        <EditText
+            android:id="@+id/input_subject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="@string/subject"
+            android:inputType="text" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/common_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" >
+
+            <EditText
+                android:id="@+id/input_start_date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
+                android:ems="10"
+                android:focusable="false"
+                android:hint="@string/start_date"
+                android:inputType="none|date" >
+
+                <requestFocus />
+            </EditText>
+        </RelativeLayout>
+
+        <EditText
+            android:id="@+id/input_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="@string/group_name"
+            android:inputType="textCapCharacters"
+            android:paddingTop="16dp" />
+    </LinearLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -60,7 +93,6 @@
             android:layout_alignParentTop="true"
             android:layout_marginLeft="80dp"
             android:text="@string/search" />
-
     </RelativeLayout>
 
 </LinearLayout>

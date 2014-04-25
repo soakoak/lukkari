@@ -14,6 +14,7 @@ import fi.sokira.lukkari.provider.DatabaseHelper;
 import fi.sokira.lukkari.provider.DbSchema;
 import fi.sokira.metropolialukkari.HakuFragment.OnSearchListener;
 import fi.sokira.metropolialukkari.models.RealizationResult;
+import fi.sokira.metropolialukkari.models.ReservationResult;
 import fi.sokira.metropolialukkari.models.Result;
 
 public class LukkariActivity extends Activity
@@ -117,18 +118,31 @@ public class LukkariActivity extends Activity
 		
 		ToteutusListFragment frag = new ToteutusListFragment();
 		
-		if( resultType == OnSearchListener.RESULT_REALIZATION) {
-			Bundle args = new Bundle(2);
+		Bundle args = new Bundle(2);
+		
+		switch( resultType) {
+		case OnSearchListener.RESULT_REALIZATION :
 			args.putParcelableArrayList( 
 					ToteutusListFragment.ARG_RESULT, 
 					((RealizationResult) result).getRealizations());
 			args.putInt( 
 					ToteutusListFragment.ARG_RESULT_TYPE, 
 					ToteutusListFragment.TYPE_REALIZATION);
+			break;
 			
-			frag.setArguments( args);
+		case OnSearchListener.RESULT_RESERVATION :
+			args.putParcelableArrayList(
+					ToteutusListFragment.ARG_RESULT, 
+					((ReservationResult) result).getReservations());
+			args.putInt(
+					ToteutusListFragment.ARG_RESULT_TYPE, 
+					ToteutusListFragment.TYPE_RESERVATION);
+			break;
+		default:
+			break;
 		}
 		
+		frag.setArguments( args);
 		getFragmentManager()
 			.beginTransaction()
 			.replace(android.R.id.content, frag)

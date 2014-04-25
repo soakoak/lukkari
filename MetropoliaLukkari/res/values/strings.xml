@@ -15,5 +15,6 @@
     <string name="name">Nimi</string>
     <string name="student_groups">Ryhmät</string>
     <string name="end_date">Loppu pvm</string>
+    <string name="subject">Aihe</string>
 
 </resources>

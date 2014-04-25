@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class RealizationResult implements Result {
 
-	public ArrayList<Realization> realizations;
+	private  ArrayList<Realization> realizations;
 
 	public ArrayList<Realization> getRealizations() {
 		return realizations;

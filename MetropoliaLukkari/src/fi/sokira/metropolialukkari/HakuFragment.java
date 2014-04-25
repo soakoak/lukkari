@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
@@ -47,6 +48,9 @@ import fi.sokira.metropolialukkari.models.MetropoliaQuery;
 import fi.sokira.metropolialukkari.models.Realization;
 import fi.sokira.metropolialukkari.models.RealizationQuery;
 import fi.sokira.metropolialukkari.models.RealizationResult;
+import fi.sokira.metropolialukkari.models.Reservation;
+import fi.sokira.metropolialukkari.models.ReservationQuery;
+import fi.sokira.metropolialukkari.models.ReservationResult;
 import fi.sokira.metropolialukkari.models.Result;
 
 public class HakuFragment extends Fragment 
@@ -56,12 +60,27 @@ public class HakuFragment extends Fragment
 	
 	private String[] spinnerChoices = null;
 	
+	private View realizationView = null;
+	
+	private View reservationView = null;
+	private EditText subjectInput = null;
+	
 	private EditText groupInput = null;
 	private EditText startDateInput = null;
 	
 	private OnSearchListener listener = null;
 	
 	private final static String TAG = "HakuFragment";
+	
+	protected int getQueryType() {
+		if(realizationView.getVisibility() == View.VISIBLE) {
+			return LukkariWebLoadTask.QUERY_REALIZATION;
+		} else if( reservationView.getVisibility() == View.VISIBLE) {
+			return LukkariWebLoadTask.QUERY_RESERVATION;
+		}
+		
+		return -1; 
+	}
 	
 	@Override
 	public void onAttach(Activity activity) {
@@ -89,6 +108,11 @@ public class HakuFragment extends Fragment
 		adapter.setDropDownViewResource( android.R.layout.simple_spinner_dropdown_item);
 		spinner.setAdapter(adapter);
 		
+		realizationView = v.findViewById( R.id.realization_layout);
+		
+		reservationView = v.findViewById( R.id.reservation_layout);
+		subjectInput = (EditText) v.findViewById( R.id.input_subject);
+		
 		startDateInput = (EditText) v.findViewById( R.id.input_start_date);
 		startDateInput.setOnClickListener( this);
 		
@@ -112,27 +136,42 @@ public class HakuFragment extends Fragment
 			NetworkInfo netInfo = connMgr.getActiveNetworkInfo();
 			
 			if( netInfo != null && netInfo.isConnected()) {
-				RealizationQuery query = new RealizationQuery();
-				query.setStudentGroups( Arrays.asList(
-						groupInput.getText().toString()));
-				Date date = null;
-				try {
-					date = DateFormat.getDateInstance().parse(
-							startDateInput.getText().toString());
-				} catch (java.text.ParseException e) {
-					e.printStackTrace();
+				int queryType = getQueryType();
+				MetropoliaQuery query = null; 
+				
+				String input = groupInput.getText().toString();
+				List<String> studentGroups = null;
+				if( !input.isEmpty()) {
+					studentGroups = Arrays.asList(input);
 				}
-				query.setStartDate( date);
+				
+				input = startDateInput.getText().toString();
+				Date startDate = parseDateFromString( input);
+						
+				switch( queryType) {
+				case LukkariWebLoadTask.QUERY_REALIZATION :
+					query = new RealizationQuery()
+						.setStudentGroups( studentGroups)
+						.setStartDate( startDate);
+					break;
+				case LukkariWebLoadTask.QUERY_RESERVATION :
+					query = new ReservationQuery()
+						.setStudentGroup( studentGroups)
+						.setStartDate( startDate)
+						.setSubject( subjectInput.getText().toString());
+					break;
+				}
 				
 				Log.d(TAG, groupInput.getText().toString());
 			
 				LukkariWebLoadTask task = 
-						new LukkariWebLoadTask( LukkariWebLoadTask.QUERY_REALIZATION);
+						new LukkariWebLoadTask( queryType);
 				task.execute( query);
 				
 				listener.onSearchInitiated();
 			} else {
-				Toast.makeText(getActivity(), "Virhe muodostaessa yhteyttä.", Toast.LENGTH_LONG).show();
+				Toast.makeText(getActivity(), "Virhe muodostaessa yhteyttä.", 
+						Toast.LENGTH_LONG).show();
 			}
 			
 			break;
@@ -159,12 +198,53 @@ public class HakuFragment extends Fragment
 			
 			break;
 		case R.id.button_clear:
+			subjectInput.setText("");
 			startDateInput.setText("");
 			groupInput.setText("");
 			break;
 		default :
 			break;
 		}
+	}
+
+	@Override
+	public void onDateSet(DatePicker view, int year, int monthOfYear,
+			int dayOfMonth) {
+		Date date = new GregorianCalendar(year, monthOfYear, dayOfMonth).getTime();
+		startDateInput.setText( DateFormat.getDateInstance().format( date));
+	}
+
+	@Override
+	public void onItemSelected(AdapterView<?> parent, View view, int position,
+			long id) {		
+		Object item = parent.getItemAtPosition( position);
+		if( item.toString().equals( spinnerChoices[0])) {
+			realizationView.setVisibility( View.VISIBLE);
+			reservationView.setVisibility( View.GONE);
+		} else if( item.toString().equals( spinnerChoices[1])) {
+			realizationView.setVisibility( View.GONE);
+			reservationView.setVisibility( View.VISIBLE);
+		}
+		Log.d(TAG, "Mode spinner: " + item.toString() + " selected.");
+	}
+
+	@Override
+	public void onNothingSelected(AdapterView<?> parent) {
+		Log.d(TAG, "Mode spinner: no selection made.");
+	}
+	
+	/*
+	 * Returns null if @param str is empty.
+	 */
+	public static Date parseDateFromString(String str) {
+		if( !str.isEmpty()) {
+			try {
+				return DateFormat.getDateInstance().parse(str);
+			} catch (java.text.ParseException e) {
+				e.printStackTrace();
+			}
+		}
+		return null;
 	}
 	
 	public interface OnSearchListener {
@@ -177,7 +257,7 @@ public class HakuFragment extends Fragment
 		public void onSearchFinished( Result result, int resultType);
 	}
 	
-	private class LukkariWebLoadTask extends AsyncTask<MetropoliaQuery, Void, RealizationResult> {
+	private class LukkariWebLoadTask extends AsyncTask<MetropoliaQuery, Void, Result> {
 		
 		public static final int QUERY_RESERVATION = 1;
 		public static final int QUERY_REALIZATION = 2;
@@ -196,7 +276,7 @@ public class HakuFragment extends Fragment
 		}
 		
 		@Override
-		protected RealizationResult doInBackground(MetropoliaQuery... params) {
+		protected Result doInBackground(MetropoliaQuery... params) {
 
 			String apikey = Secrets.METROPOLIA_API_KEY;
 			String contentType = "application/json";
@@ -209,29 +289,50 @@ public class HakuFragment extends Fragment
 			HttpConnectionParams.setSoTimeout(clientParams, 30000);	
 			
 			HttpPost postMethod = null;
+			Result result = null;
 			
 			Gson gson = new GsonBuilder()
 				.setDateFormat("yyyy-MM-dd'T'HH:mm")
 				.disableHtmlEscaping()
 				.create();
 			
-			switch( queryType) {
+			StringEntity entity = null;
 			
+			switch( queryType) {
 			case QUERY_REALIZATION:
 				postMethod = new HttpPost( realizationServiceUrl + "/search?apiKey=" + apikey);
 				
-				RealizationQuery query = (RealizationQuery) params[0];
-				
 				try {
-					StringEntity entity = new StringEntity( gson.toJson( query));
-					entity.setContentType(contentType);
-					entity.setContentEncoding( charset);
-					postMethod.setEntity( entity);
+					entity = new StringEntity( 
+							gson.toJson( (RealizationQuery) params[0]));
 				} catch (UnsupportedEncodingException e) {
 					e.printStackTrace();
 				}
+				break;
+				
+			case QUERY_RESERVATION:
+				postMethod = new HttpPost( reservationServiceUrl + "/search?apiKey=" + apikey);
+
+				try {
+					entity = new StringEntity( 
+							gson.toJson( (ReservationQuery) params[0]));
+					Log.d(TAG, "Lähetettävä Json: " + gson.toJson( (ReservationQuery) params[0]));
+				} catch (UnsupportedEncodingException e) {
+					e.printStackTrace();
+				}
+				break;
+			default:
+				break;
+			}
+			
+			if( entity != null) {
+				entity.setContentType(contentType);
+				entity.setContentEncoding( charset);
+				postMethod.setEntity( entity);
 				
 				HttpResponse response = null;
+				String resultStr = null;
+				
 				try {
 					response = client.execute( postMethod);
 				} catch (ClientProtocolException e) {
@@ -242,72 +343,69 @@ public class HakuFragment extends Fragment
 				
 				if( response != null) {
 					try {
-						String resultStr = EntityUtils.toString( response.getEntity(), charset);
+						resultStr = EntityUtils.toString( response.getEntity(), charset);
 		
-						Log.d(TAG, "Result string length: " + resultStr.length());
-						RealizationResult realzResult = gson.fromJson(
-								resultStr,
-								RealizationResult.class);
-						
-						Log.d(TAG, "Number of results: " + realzResult.getRealizations().size());
-						for( Realization realz : realzResult.getRealizations())
-						{
-							Log.d(TAG, "Realization name: " + realz.getName());
-						}
-						
-						return realzResult;
 					} catch (ParseException e) {
 						e.printStackTrace();
 					} catch (IOException e) {
 						e.printStackTrace();
 					} 
 				}
-				break;
-				
-			case QUERY_RESERVATION:
-				postMethod = new HttpPost( reservationServiceUrl + "/search?apiKey=" + apikey);
-				//TODO jne.
-				break;
-			default:
-				break;
+
+				Log.d(TAG, "Result string length: " + resultStr.length());
+			
+				switch( queryType) {
+				case QUERY_REALIZATION :
+					result = gson.fromJson(
+							resultStr,
+							RealizationResult.class);
+					
+					RealizationResult realzResult = (RealizationResult) result;
+					Log.d(TAG, "Number of results: " + realzResult.getRealizations().size());
+					for( Realization realz : realzResult.getRealizations())
+					{
+						Log.d(TAG, "Realization name: " + realz.getName());
+					}
+					break;
+					
+				case QUERY_RESERVATION :
+//					Log.d(TAG, resultStr);
+					result = gson.fromJson(
+							resultStr,
+							ReservationResult.class);
+					ReservationResult reservResult = (ReservationResult) result;
+					Log.d(TAG, "Number of results: " + reservResult.getReservations().size());
+					for( Reservation reserv : reservResult.getReservations())
+					{
+						Log.d(TAG, "Reservation subject: " + reserv.getSubject());
+					}
+					break;
+				default:
+					break;
+				}
 			}
 			
-			return null;
+			return result;
 		}
 		
 		@Override
-		protected void onPostExecute(RealizationResult result) {
+		protected void onPostExecute(Result result) {
 
 			if( result != null) {
-				listener.onSearchFinished( result, OnSearchListener.RESULT_REALIZATION);
+				switch( queryType) {
+				case QUERY_REALIZATION :
+					listener.onSearchFinished( result, OnSearchListener.RESULT_REALIZATION);
+					break;
+				case QUERY_RESERVATION :
+					listener.onSearchFinished( result, OnSearchListener.RESULT_RESERVATION);
+					break;
+				default:
+					Log.d(TAG, "Unknown result type");
+					break;
+				}
 			} else {
 				Log.d(TAG, "No result");
 			}
 		}
-		
-	}
-
-	@Override
-	public void onDateSet(DatePicker view, int year, int monthOfYear,
-			int dayOfMonth) {
-		Date date = new GregorianCalendar(year, monthOfYear, dayOfMonth).getTime();
-		startDateInput.setText( DateFormat.getDateInstance().format( date));
-	}
-
-	@Override
-	public void onItemSelected(AdapterView<?> parent, View view, int position,
-			long id) {		
-		Object item = parent.getItemAtPosition( position);
-		if( item.toString().equals( spinnerChoices[0])) {
-			//Realization: change layout
-		} else if( item.toString().equals( spinnerChoices[1])) {
-			//Reservation: change layout
-		}
-		Log.d(TAG, "Mode spinner: " + item.toString() + " selected.");
-	}
-
-	@Override
-	public void onNothingSelected(AdapterView<?> parent) {
-		Log.d(TAG, "Mode spinner: no selection made.");
 	}
 }
