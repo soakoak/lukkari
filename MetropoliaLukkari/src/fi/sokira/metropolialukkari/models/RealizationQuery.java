@@ -18,40 +18,45 @@ public class RealizationQuery implements MetropoliaQuery {
 		return name;
 	}
 
-	public void setName(String name) {
+	public RealizationQuery setName(String name) {
 		this.name = name;
+		return this;
 	}
 
 	public List<String> getCodes() {
 		return codes;
 	}
 
-	public void setCodes(List<String> codes) {
+	public RealizationQuery setCodes(List<String> codes) {
 		this.codes = codes;
+		return this;
 	}
 
 	public Date getStartDate() {
 		return startDate;
 	}
 
-	public void setStartDate(Date startDate) {
+	public RealizationQuery setStartDate(Date startDate) {
 		this.startDate = startDate;
+		return this;
 	}
 
 	public Date getEndDate() {
 		return endDate;
 	}
 
-	public void setEndDate(Date endDate) {
+	public RealizationQuery setEndDate(Date endDate) {
 		this.endDate = endDate;
+		return this;
 	}
 
 	public List<String> getStudentGroups() {
 		return studentGroups;
 	}
 
-	public void setStudentGroups(List<String> studentGroups) {
+	public RealizationQuery setStudentGroups(List<String> studentGroups) {
 		this.studentGroups = studentGroups;
+		return this;
 	}
 
 }
