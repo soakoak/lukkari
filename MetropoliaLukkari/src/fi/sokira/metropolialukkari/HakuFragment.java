@@ -161,8 +161,6 @@ public class HakuFragment extends Fragment
 						.setSubject( subjectInput.getText().toString());
 					break;
 				}
-				
-				Log.d(TAG, groupInput.getText().toString());
 			
 				LukkariWebLoadTask task = 
 						new LukkariWebLoadTask( queryType);
@@ -297,32 +295,28 @@ public class HakuFragment extends Fragment
 				.create();
 			
 			StringEntity entity = null;
+			String query = null;
 			
 			switch( queryType) {
 			case QUERY_REALIZATION:
 				postMethod = new HttpPost( realizationServiceUrl + "/search?apiKey=" + apikey);
-				
-				try {
-					entity = new StringEntity( 
-							gson.toJson( (RealizationQuery) params[0]));
-				} catch (UnsupportedEncodingException e) {
-					e.printStackTrace();
-				}
+				query = gson.toJson( (RealizationQuery) params[0]);
 				break;
 				
 			case QUERY_RESERVATION:
 				postMethod = new HttpPost( reservationServiceUrl + "/search?apiKey=" + apikey);
-
-				try {
-					entity = new StringEntity( 
-							gson.toJson( (ReservationQuery) params[0]));
-					Log.d(TAG, "Lähetettävä Json: " + gson.toJson( (ReservationQuery) params[0]));
-				} catch (UnsupportedEncodingException e) {
-					e.printStackTrace();
-				}
+				query = gson.toJson( (ReservationQuery) params[0]);
 				break;
 			default:
 				break;
+			}
+			
+			Log.d(TAG, "Lähetettävä Json: " + query);
+			
+			try {
+				entity = new StringEntity( query);
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
 			}
 			
 			if( entity != null) {

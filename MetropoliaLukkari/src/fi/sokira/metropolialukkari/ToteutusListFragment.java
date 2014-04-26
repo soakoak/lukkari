@@ -1,28 +1,18 @@
 package fi.sokira.metropolialukkari;
 
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import android.app.AlertDialog;
+import android.app.Activity;
 import android.app.ListFragment;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.ActionMode;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.FrameLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -44,35 +34,24 @@ public class ToteutusListFragment extends ListFragment {
 	public static final int TYPE_RESERVATION = 1;
 	public static final int TYPE_REALIZATION = 2;
 	
+	@SuppressWarnings("unused")
 	private static final String TAG = ToteutusListFragment.class.getSimpleName();
 	
 	private int contentType = 0; 
-	private ActionMode actionMode = null;
-	
-	
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated( savedInstanceState);
+	private OnResultItemSelectedListener selectListener = null;
+
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
 		
-		final ListView v = getListView();
-		v.setChoiceMode( ListView.CHOICE_MODE_SINGLE);
-		v.setOnItemLongClickListener( new AdapterView.OnItemLongClickListener(){
-
-			@Override
-			public boolean onItemLongClick(AdapterView<?> parent, View view,
-					int position, long id) {
-				
-				if( actionMode == null) {
-					Log.d(TAG, "Action mode set");
-					actionMode = getActivity().startActionMode( actionModeCallback);
-				}
-				
-				v.setItemChecked( position, true);
-				return true;
-			}
-			
-		});
-	};
-
+		try{ 
+			selectListener = (OnResultItemSelectedListener) activity;
+		} catch (ClassCastException e) {
+			throw new ClassCastException(
+					activity.toString() + 
+					" must implement " + selectListener.getClass().getSimpleName());
+		}
+	}
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -103,6 +82,13 @@ public class ToteutusListFragment extends ListFragment {
 		setListAdapter(adapter);
 		
 		return v;
+	}
+	
+	@Override
+	public void onListItemClick(ListView l, View v, int position, long id) {
+		ResultItem item = (ResultItem) getListView().getItemAtPosition(position);
+		l.setItemChecked(position, false);
+		selectListener.onResultItemSelected(item, contentType);
 	}
 	
 	private List<Map<String,String>> buildData() {
@@ -208,148 +194,9 @@ public class ToteutusListFragment extends ListFragment {
 			return v;
 		}
 	}
-
-	private ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
+	
+	public interface OnResultItemSelectedListener {
 		
-		@Override
-		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-			return false;
-		}
-		
-		@Override
-		public void onDestroyActionMode(ActionMode mode) {
-			ListView lv = getListView();
-			int selectPos = lv.getCheckedItemPosition();
-			lv.setItemChecked(selectPos, false);
-			actionMode = null;
-		}
-		
-		@Override
-		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-			MenuInflater inflater = getActivity().getMenuInflater();
-			inflater.inflate( R.menu.result_menu, menu);
-			return true;
-		}
-		
-		@Override
-		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-			
-			switch( item.getItemId()) {
-			case R.id.more_details :
-				final LayoutInflater infl = getActivity().getLayoutInflater();
-				ViewGroup v = null;
-				TextView text;
-				StringBuilder strb;
-				DateFormat df;
-				int position = getListView().getCheckedItemPosition();
-				ResultItem resultItem = ((ResultAdapter) getListAdapter()).getItem( position);
-				
-				switch( contentType) {
-				case TYPE_REALIZATION :
-					df = DateFormat.getDateInstance();
-					
-					Realization relz = (Realization) resultItem;
-					
-					v = (ViewGroup) infl.inflate( R.layout.dialog_realization_details, null);
-					
-					text = (TextView) v.findViewById( R.id.code);
-					text.setText( text.getText() + ": " + relz.getCode());
-					
-					text = (TextView) v.findViewById( R.id.name);
-					text.setText( text.getText() + ": " + relz.getName());
-				
-					text = (TextView) v.findViewById( R.id.student_groups);
-					strb = new StringBuilder();
-					List<StudentGroup> grps = relz.getStudentGroups();
-					for( int i = 0; i < grps.size() - 1; i++) {
-						strb.append( grps.get(i).getCode());
-						strb.append( ", ");
-					}
-					strb.append( grps.get( grps.size() - 1).getCode());
-					text.setText( text.getText() + ": " + strb.toString());
-					
-					text = (TextView) v.findViewById( R.id.start_date);
-					text.setText( 
-							text.getText() + ": " + df.format( relz.getStartDate()));
-					
-					text = (TextView) v.findViewById( R.id.end_date);
-					text.setText( 
-							text.getText() + ": " + df.format( relz.getEndDate()));
-					
-					break;
-				case TYPE_RESERVATION :
-					df = DateFormat.getDateTimeInstance();
-					Reservation reserv = (Reservation) resultItem;
-					v = (ViewGroup) infl.inflate( R.layout.dialog_reservation_details, null);
-					
-					text = (TextView) v.findViewById( R.id.subject);
-					text.setText( text.getText() + ": " + reserv.getSubject());
-					
-					text = (TextView) v.findViewById( R.id.start_date);
-					text.setText( 
-							text.getText() + ": " + df.format(reserv.getStartDate()));
-					
-					text = (TextView) v.findViewById( R.id.end_date);
-					text.setText( 
-							text.getText() + ": " + df.format(reserv.getEndDate()));
-					
-					ListView lv = (ListView) v.findViewById( R.id.list);
-
-					ArrayAdapter<Resource> adapter = 
-							new ArrayAdapter<Resource>(
-								getActivity(), 
-								R.layout.dialog_resource_details, 
-								reserv.getResources()) 
-					{
-						
-						public View getView(int position, View convertView, ViewGroup parent) {
-							View subView = infl.inflate( 
-									R.layout.dialog_resource_details, null);
-							
-							Resource resource = getItem( position);
-							TextView text;
-							
-							text = (TextView) subView.findViewById( R.id.type);
-							text.setText( text.getText() + ": " + resource.getType());
-							
-							text = (TextView) subView.findViewById( R.id.code);
-							text.setText( text.getText() + ": " + resource.getCode());
-							
-							text = (TextView) subView.findViewById( R.id.name);
-							text.setText( text.getText() + ": " + resource.getName());
-							
-							return subView;
-						};
-					};
-					
-					lv.setAdapter(adapter);
-					
-					break;
-				case TYPE_NO_TYPE :
-					text = new TextView( getActivity());
-					text.setText("No data");
-					v = new FrameLayout( getActivity());
-					v.addView(text);
-					break;
-				}
-				
-				new AlertDialog.Builder( getActivity())
-					.setView( v)
-					.setPositiveButton("OK", new OnClickListener() {
-						
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							Log.d(TAG, "More details -dialog dismissed");
-						}
-					}).show();
-				
-				break;
-			default:
-				return false;
-			}
-			
-			mode.finish();
-			return true;
-		}
-	};
+		public void onResultItemSelected( ResultItem item, int itemType);
+	}
 }

@@ -1,6 +1,7 @@
 package fi.sokira.metropolialukkari;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -16,10 +17,12 @@ import fi.sokira.metropolialukkari.HakuFragment.OnSearchListener;
 import fi.sokira.metropolialukkari.models.RealizationResult;
 import fi.sokira.metropolialukkari.models.ReservationResult;
 import fi.sokira.metropolialukkari.models.Result;
+import fi.sokira.metropolialukkari.models.ResultItem;
 
 public class LukkariActivity extends Activity
 		implements
-			HakuFragment.OnSearchListener {
+			HakuFragment.OnSearchListener,
+			ToteutusListFragment.OnResultItemSelectedListener {
 	
 	private final static String TAG = "LukkariActivity";
 
@@ -146,5 +149,39 @@ public class LukkariActivity extends Activity
 			.replace(android.R.id.content, frag)
 			.addToBackStack( null)
 			.commit();
+	}
+
+	@Override
+	public void onResultItemSelected(ResultItem item, int itemType) {
+		Fragment frag = null;
+		Bundle args = new Bundle(1);
+		
+		switch( itemType) {
+		
+		case ToteutusListFragment.TYPE_REALIZATION :
+			frag = new RealizationDetailFragment();
+			args.putParcelable( 
+					RealizationDetailFragment.ARG_REALIZATION, item);
+			break;
+			
+		case ToteutusListFragment.TYPE_RESERVATION :
+			frag = new ReservationDetailFragment();
+			args.putParcelable( 
+					ReservationDetailFragment.ARG_RESERVATION, item);
+			break;
+			
+		default:
+			break;
+		}
+		
+		if( frag != null) {
+			frag.setArguments(args);
+			
+			getFragmentManager()
+				.beginTransaction()
+				.replace(android.R.id.content, frag)
+				.addToBackStack( null)
+				.commit();
+		}
 	}
 }
