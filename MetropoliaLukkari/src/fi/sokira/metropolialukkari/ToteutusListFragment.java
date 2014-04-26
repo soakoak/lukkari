@@ -22,11 +22,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import fi.sokira.metropolialukkari.models.Realization;
+import fi.sokira.metropolialukkari.models.Reservation;
+import fi.sokira.metropolialukkari.models.Resource;
+import fi.sokira.metropolialukkari.models.ResultItem;
 import fi.sokira.metropolialukkari.models.StudentGroup;
 
 public class ToteutusListFragment extends ListFragment {
@@ -83,30 +87,17 @@ public class ToteutusListFragment extends ListFragment {
 		Bundle args = getArguments();
 		
 		contentType = args.getInt(ARG_RESULT_TYPE, TYPE_NO_TYPE);
+		List<ResultItem> result = 
+				args.getParcelableArrayList(ARG_RESULT);
 		
-		switch( contentType) {
-		
-		case TYPE_REALIZATION:
-			ArrayList<Realization> result = 
-						args.getParcelableArrayList(ARG_RESULT);
-		  	if( result != null) {
-				adapter = new RealizationAdapter(
-						getActivity(), 
-						resource,
-						to,
-						result);
-			}
-			break;
-			
-		case TYPE_RESERVATION:
-			//TODO varauksien käsittely
+		if( result != null) {
+			adapter = new ResultAdapter(
+					getActivity(), 
+					resource,
+					to,
+					result);
+		} else {
 			adapter = getDefaultAdapter( resource, to);
-			break;
-			
-		case TYPE_NO_TYPE:
-		default:
-			adapter = getDefaultAdapter( resource, to);
-			break;
 		}
 
 		setListAdapter(adapter);
@@ -143,13 +134,13 @@ public class ToteutusListFragment extends ListFragment {
 					to);
 	}
 	
-	private class RealizationAdapter extends ArrayAdapter<Realization> {
+	private class ResultAdapter extends ArrayAdapter<ResultItem> {
 		
 		private int resource;
 		private int[] to;
 
-		public RealizationAdapter(Context context, int resource, int[] to,
-				List<Realization> objects) {
+		public ResultAdapter(Context context, int resource, int[] to,
+				List<ResultItem> objects) {
 			super(context, resource, objects);
 			
 			this.resource = resource;
@@ -162,7 +153,7 @@ public class ToteutusListFragment extends ListFragment {
 					(LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 			
 			View v;
-			TextView textV;
+			TextView[] textV = new TextView[2];
 			
 			if( convertView == null) {
 				v = inflater.inflate( resource, parent, false);
@@ -170,24 +161,50 @@ public class ToteutusListFragment extends ListFragment {
 				v = convertView;
 			}
 			
-			Realization relz = getItem(position);
-			
-			textV = (TextView) v.findViewById( to[0]);
-			textV.setText( relz.getName());
-			
-			textV = (TextView) v.findViewById( to[1]);
-			
 			StringBuilder strb = new StringBuilder();
 			
-			List<StudentGroup> grps = relz.getStudentGroups();
-			for( int i = 0; i < grps.size() - 1; i++) {
-				strb.append( grps.get(i).getCode());
-				strb.append( " ");
+			switch( contentType) {
+			case TYPE_REALIZATION:
+				Realization relz = (Realization) getItem(position);
+				
+				textV[0] = (TextView) v.findViewById( to[0]);
+				textV[1] = (TextView) v.findViewById( to[1]);
+
+				textV[0].setText( relz.getName());
+				
+				List<StudentGroup> grps = relz.getStudentGroups();
+				for( int i = 0; i < grps.size() - 1; i++) {
+					strb.append( grps.get(i).getCode());
+					strb.append( " ");
+				}
+				strb.append( grps.get( grps.size() - 1).getCode());
+				
+				textV[1].setText( strb.toString());
+
+				break;
+			case TYPE_RESERVATION :
+				Reservation reserv = (Reservation) getItem( position);
+				
+				textV[0] = (TextView) v.findViewById( to[0]);
+				textV[1] = (TextView) v.findViewById( to[1]);
+				
+				for( Resource resource : reserv.getResources()) {
+					if(resource.getType().equals( Resource.TYPE_REALIZATION)) {
+						textV[0].setText( resource.getName());
+					} else if( resource.getType().equals( Resource.TYPE_STUDENT_GROUP)) {
+						strb.append( resource.getName());
+						strb.append( " ");
+					}
+				}
+				
+				textV[1].setText( strb.toString());
+				
+				break;
+			default:
+				v = super.getView(position, convertView, parent);
+				break;
 			}
-			strb.append( grps.get( grps.size() - 1).getCode());
-			
-			textV.setText( strb.toString());
-			
+
 			return v;
 		}
 	}
@@ -219,19 +236,21 @@ public class ToteutusListFragment extends ListFragment {
 			
 			switch( item.getItemId()) {
 			case R.id.more_details :
-				LayoutInflater infl = getActivity().getLayoutInflater();
-				View v = null;
+				final LayoutInflater infl = getActivity().getLayoutInflater();
+				ViewGroup v = null;
 				TextView text;
 				StringBuilder strb;
-				DateFormat df = DateFormat.getDateInstance();
+				DateFormat df;
+				int position = getListView().getCheckedItemPosition();
+				ResultItem resultItem = ((ResultAdapter) getListAdapter()).getItem( position);
 				
 				switch( contentType) {
 				case TYPE_REALIZATION :
-					int position = getListView().getCheckedItemPosition();
-					Realization relz = 
-							((RealizationAdapter) getListAdapter()).getItem( position);
+					df = DateFormat.getDateInstance();
 					
-					v = infl.inflate( R.layout.dialog_realization_details, null);
+					Realization relz = (Realization) resultItem;
+					
+					v = (ViewGroup) infl.inflate( R.layout.dialog_realization_details, null);
 					
 					text = (TextView) v.findViewById( R.id.code);
 					text.setText( text.getText() + ": " + relz.getCode());
@@ -258,10 +277,60 @@ public class ToteutusListFragment extends ListFragment {
 							text.getText() + ": " + df.format( relz.getEndDate()));
 					
 					break;
+				case TYPE_RESERVATION :
+					df = DateFormat.getDateTimeInstance();
+					Reservation reserv = (Reservation) resultItem;
+					v = (ViewGroup) infl.inflate( R.layout.dialog_reservation_details, null);
+					
+					text = (TextView) v.findViewById( R.id.subject);
+					text.setText( text.getText() + ": " + reserv.getSubject());
+					
+					text = (TextView) v.findViewById( R.id.start_date);
+					text.setText( 
+							text.getText() + ": " + df.format(reserv.getStartDate()));
+					
+					text = (TextView) v.findViewById( R.id.end_date);
+					text.setText( 
+							text.getText() + ": " + df.format(reserv.getEndDate()));
+					
+					ListView lv = (ListView) v.findViewById( R.id.list);
+
+					ArrayAdapter<Resource> adapter = 
+							new ArrayAdapter<Resource>(
+								getActivity(), 
+								R.layout.dialog_resource_details, 
+								reserv.getResources()) 
+					{
+						
+						public View getView(int position, View convertView, ViewGroup parent) {
+							View subView = infl.inflate( 
+									R.layout.dialog_resource_details, null);
+							
+							Resource resource = getItem( position);
+							TextView text;
+							
+							text = (TextView) subView.findViewById( R.id.type);
+							text.setText( text.getText() + ": " + resource.getType());
+							
+							text = (TextView) subView.findViewById( R.id.code);
+							text.setText( text.getText() + ": " + resource.getCode());
+							
+							text = (TextView) subView.findViewById( R.id.name);
+							text.setText( text.getText() + ": " + resource.getName());
+							
+							return subView;
+						};
+					};
+					
+					lv.setAdapter(adapter);
+					
+					break;
 				case TYPE_NO_TYPE :
 					text = new TextView( getActivity());
 					text.setText("No data");
-					v = text;
+					v = new FrameLayout( getActivity());
+					v.addView(text);
+					break;
 				}
 				
 				new AlertDialog.Builder( getActivity())

@@ -5,6 +5,10 @@ import android.os.Parcelable;
 
 public class Resource implements Parcelable {
 
+	public static final String TYPE_REALIZATION = "realization";
+	public static final String TYPE_ROOM = "room";
+	public static final String TYPE_STUDENT_GROUP = "student_group";
+	
 	private String type;
 	private String code;
 	private String name;

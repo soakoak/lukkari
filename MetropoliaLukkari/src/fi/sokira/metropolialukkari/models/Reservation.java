@@ -7,7 +7,7 @@ import java.util.List;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class Reservation implements Parcelable {
+public class Reservation extends ResultItem {
 
 	private String subject;
 	private Date startDate;

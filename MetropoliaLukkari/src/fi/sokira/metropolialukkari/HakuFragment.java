@@ -353,7 +353,10 @@ public class HakuFragment extends Fragment
 				}
 
 				Log.d(TAG, "Result string length: " + resultStr.length());
-			
+				if( resultStr.length() < 30) {
+					Log.d(TAG, resultStr);
+				}
+				
 				switch( queryType) {
 				case QUERY_REALIZATION :
 					result = gson.fromJson(
@@ -369,7 +372,6 @@ public class HakuFragment extends Fragment
 					break;
 					
 				case QUERY_RESERVATION :
-//					Log.d(TAG, resultStr);
 					result = gson.fromJson(
 							resultStr,
 							ReservationResult.class);

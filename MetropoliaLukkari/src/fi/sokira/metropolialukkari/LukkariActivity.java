@@ -114,8 +114,6 @@ public class LukkariActivity extends Activity
 	
 	@Override
 	public void onSearchFinished(Result result, int resultType) {
-		Log.d(TAG, "Result get.");
-		
 		ToteutusListFragment frag = new ToteutusListFragment();
 		
 		Bundle args = new Bundle(2);

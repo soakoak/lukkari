@@ -9,7 +9,7 @@ import java.util.List;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class Realization implements Parcelable {
+public class Realization extends ResultItem {
 
 	private String code;
 	private String name;
