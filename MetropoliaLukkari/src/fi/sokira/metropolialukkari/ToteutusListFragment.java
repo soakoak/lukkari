@@ -9,9 +9,16 @@ import android.app.Activity;
 import android.app.ListFragment;
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
+import android.util.SparseBooleanArray;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -34,11 +41,19 @@ public class ToteutusListFragment extends ListFragment {
 	public static final int TYPE_RESERVATION = 1;
 	public static final int TYPE_REALIZATION = 2;
 	
-	@SuppressWarnings("unused")
 	private static final String TAG = ToteutusListFragment.class.getSimpleName();
 	
 	private int contentType = 0; 
 	private OnResultItemSelectedListener selectListener = null;
+
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated( savedInstanceState);
+		
+		final ListView v = getListView();
+		v.setChoiceMode( ListView.CHOICE_MODE_MULTIPLE_MODAL);
+		
+		v.setMultiChoiceModeListener( new ResultMultiChoiceListener());
+	};
 
 	@Override
 	public void onAttach(Activity activity) {
@@ -195,8 +210,75 @@ public class ToteutusListFragment extends ListFragment {
 		}
 	}
 	
+	private class ResultMultiChoiceListener implements AbsListView.MultiChoiceModeListener {
+		
+		private int itemsChecked = 0;
+
+		@Override
+		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+			MenuInflater inflater = mode.getMenuInflater();
+			inflater.inflate(R.menu.result_menu, menu);
+			return true;
+		}
+
+		@Override
+		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+			return false;
+		}
+
+		@Override
+		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+			switch( item.getItemId()) {
+			
+			case R.id.add :
+				Log.d(TAG, itemsChecked + " items added.");
+				
+				ListView lv = getListView();
+				
+				SparseBooleanArray booleanArray = lv.getCheckedItemPositions();
+				ArrayList<ResultItem> checkedItems = new ArrayList<ResultItem>( itemsChecked);
+				
+				for(int i = 0; i < lv.getCount(); i++) {
+					if( booleanArray.get(i) == true) {
+						checkedItems.add( (ResultItem) lv.getItemAtPosition( i));
+					}
+				}
+				
+				selectListener.onResultItemsAdded(checkedItems, contentType);
+				mode.finish();
+				break;
+				
+			default :
+				return false;
+			}
+			
+			return true;
+		}
+
+		@Override
+		public void onDestroyActionMode(ActionMode mode) {
+			//actionMode = null; ?
+			itemsChecked = 0;
+		}
+
+		@Override
+		public void onItemCheckedStateChanged(ActionMode mode, int position,
+				long id, boolean checked) {
+			if( checked) {
+				itemsChecked++;
+			} else {
+				itemsChecked--;
+			}
+			
+			mode.setTitle( itemsChecked + " items selected.");
+		}
+		
+	}
+	
 	public interface OnResultItemSelectedListener {
 		
 		public void onResultItemSelected( ResultItem item, int itemType);
+		
+		public void onResultItemsAdded( ArrayList<ResultItem> items, int itemType);
 	}
 }

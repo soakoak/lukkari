@@ -17,5 +17,6 @@
     <string name="end_date">Loppu pvm</string>
     <string name="subject">Aihe</string>
     <string name="resouce_type">Resurssityyppi</string>
+    <string name="add">Add</string>
 
 </resources>

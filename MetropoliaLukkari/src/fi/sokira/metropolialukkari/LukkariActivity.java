@@ -1,5 +1,7 @@
 package fi.sokira.metropolialukkari;
 
+import java.util.ArrayList;
+
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.ContentValues;
@@ -63,22 +65,22 @@ public class LukkariActivity extends Activity
 				Log.d(TAG, "Lukkari row id: " + lkrId);
 				
 				values.clear();
-				values.put(DbSchema.COL_STUDENT_GROUPS, "TO11K");
+//				values.put(DbSchema.COL_STUDENT_GROUPS, "TO11K");
 				values.put(DbSchema.COL_NAME, "Pelitekoälyt");
 				values.put(DbSchema.COL_END_DATE, System.currentTimeMillis());
-				long totId = db.insert( DbSchema.TBL_TOTEUTUS, null, values);
+				long totId = db.insert( DbSchema.TBL_REALIZATION, null, values);
 				Log.d( TAG, "Toteutus row id: " + totId);
 				
 				values.clear();
 				values.put(DbSchema.COL_ID_LUKKARI, lkrId);
-				values.put(DbSchema.COL_ID_TOTEUTUS, totId);
-				db.insert( DbSchema.TBL_LUKKARI_TO_TOTEUTUS, null, values);
+				values.put(DbSchema.COL_ID_REALIZATION, totId);
+				db.insert( DbSchema.TBL_LUKKARI_TO_REALIZATION, null, values);
 				
 				values.clear();
-				values.put(DbSchema.COL_ID_TOTEUTUS, totId);
-				values.put(DbSchema.COL_TILA, "U204");
+				values.put(DbSchema.COL_ID_REALIZATION, totId);
+				values.put(DbSchema.COL_ROOM, "U204");
 				values.put(DbSchema.COL_END_DATE, System.currentTimeMillis());
-				db.insert(DbSchema.TBL_VARAUS, null, values);
+				db.insert(DbSchema.TBL_RESERVATION, null, values);
 				
 				db.setTransactionSuccessful();
 			} catch (SQLException e) {
@@ -91,9 +93,9 @@ public class LukkariActivity extends Activity
 			String select = "SELECT COUNT(*) FROM ";
 			String[] tables = {
 				DbSchema.TBL_LUKKARI,
-				DbSchema.TBL_TOTEUTUS,
-				DbSchema.TBL_LUKKARI_TO_TOTEUTUS,
-				DbSchema.TBL_VARAUS
+				DbSchema.TBL_REALIZATION,
+				DbSchema.TBL_LUKKARI_TO_REALIZATION,
+				DbSchema.TBL_RESERVATION
 			};
 			for(int i = tables.length - 1; i >= 0; i--) {
 				c = db.rawQuery(select + tables[i], new String[]{});
@@ -183,5 +185,10 @@ public class LukkariActivity extends Activity
 				.addToBackStack( null)
 				.commit();
 		}
+	}
+	
+	@Override
+	public void onResultItemsAdded(ArrayList<ResultItem> items, int itemType) {
+		Log.d(TAG, "Received " + items.size() + " items to be added.");
 	}
 }
