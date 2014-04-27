@@ -19,9 +19,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	
 	private final static String[] TABLES = {
 			DbSchema.TBL_LUKKARI,
-			DbSchema.TBL_TOTEUTUS,
-			DbSchema.TBL_LUKKARI_TO_TOTEUTUS,
-			DbSchema.TBL_VARAUS
+			DbSchema.TBL_REALIZATION,
+			DbSchema.TBL_LUKKARI_TO_REALIZATION,
+			DbSchema.TBL_RESERVATION
 		};
 	
 	public DatabaseHelper(Context context) {
@@ -32,9 +32,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	public void onCreate(SQLiteDatabase db) {
 		String[] createOperations = {
 				DbSchema.CREATE_TABLE_LUKKARI,
-				DbSchema.CREATE_TABLE_TOTEUTUS,
-				DbSchema.CREATE_TABLE_LUKKARI_TO_TOTEUTUS,
-				DbSchema.CREATE_TABLE_VARAUS
+				DbSchema.CREATE_TABLE_REALIZATION,
+				DbSchema.CREATE_TABLE_LUKKARI_TO_REALIZATION,
+				DbSchema.CREATE_TABLE_RESERVATION
 			};
 		
 		for( String op : createOperations) {
@@ -53,9 +53,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 		String[] dropStatements = {
 				DbSchema.DROP_TBL_LUKKARI,
-				DbSchema.DROP_TBL_TOTEUTUS,
-				DbSchema.DROP_TBL_LUKKARI_TO_TOTEUTUS,
-				DbSchema.DROP_TBL_VARAUS
+				DbSchema.DROP_TBL_REALIZATION,
+				DbSchema.DROP_TBL_LUKKARI_TO_REALIZATION,
+				DbSchema.DROP_TBL_RESERVATION
 		};
 		
 		int i = 0;
