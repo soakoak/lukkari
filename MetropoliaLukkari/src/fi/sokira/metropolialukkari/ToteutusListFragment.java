@@ -234,8 +234,8 @@ public class ToteutusListFragment extends ListFragment {
 				Log.d(TAG, itemsChecked + " items added.");
 				
 				ListView lv = getListView();
-				
 				SparseBooleanArray booleanArray = lv.getCheckedItemPositions();
+				
 				ArrayList<ResultItem> checkedItems = new ArrayList<ResultItem>( itemsChecked);
 				
 				for(int i = 0; i < lv.getCount(); i++) {
@@ -245,6 +245,7 @@ public class ToteutusListFragment extends ListFragment {
 				}
 				
 				selectListener.onResultItemsAdded(checkedItems, contentType);
+				
 				mode.finish();
 				break;
 				

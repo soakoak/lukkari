@@ -9,14 +9,19 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteQueryBuilder;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import fi.sokira.lukkari.provider.DatabaseHelper;
 import fi.sokira.lukkari.provider.DbSchema;
+import fi.sokira.lukkari.provider.LukkariContract.Lukkari;
 import fi.sokira.metropolialukkari.HakuFragment.OnSearchListener;
+import fi.sokira.metropolialukkari.models.Realization;
 import fi.sokira.metropolialukkari.models.RealizationResult;
+import fi.sokira.metropolialukkari.models.Reservation;
 import fi.sokira.metropolialukkari.models.ReservationResult;
 import fi.sokira.metropolialukkari.models.Result;
 import fi.sokira.metropolialukkari.models.ResultItem;
@@ -27,6 +32,8 @@ public class LukkariActivity extends Activity
 			ToteutusListFragment.OnResultItemSelectedListener {
 	
 	private final static String TAG = "LukkariActivity";
+	
+	private final static String TEST_LUKKARI_NAME = "testilukkari";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -60,12 +67,11 @@ public class LukkariActivity extends Activity
 			
 			try {
 				ContentValues values = new ContentValues();
-				values.put(DbSchema.COL_NAME, "testilukkari");
+				values.put(DbSchema.COL_NAME, TEST_LUKKARI_NAME);
 				long lkrId = db.insert( DbSchema.TBL_LUKKARI, null, values);
 				Log.d(TAG, "Lukkari row id: " + lkrId);
 				
 				values.clear();
-//				values.put(DbSchema.COL_STUDENT_GROUPS, "TO11K");
 				values.put(DbSchema.COL_NAME, "Peliteko‰lyt");
 				values.put(DbSchema.COL_END_DATE, System.currentTimeMillis());
 				long totId = db.insert( DbSchema.TBL_REALIZATION, null, values);
@@ -80,7 +86,21 @@ public class LukkariActivity extends Activity
 				values.put(DbSchema.COL_ID_REALIZATION, totId);
 				values.put(DbSchema.COL_ROOM, "U204");
 				values.put(DbSchema.COL_END_DATE, System.currentTimeMillis());
-				db.insert(DbSchema.TBL_RESERVATION, null, values);
+				long varId = db.insert(DbSchema.TBL_RESERVATION, null, values);
+				
+				values.clear();
+				values.put(DbSchema.COL_CODE, "TO11K");
+				long ryhmaId = db.insert( DbSchema.TBL_STUDENT_GROUP, null, values);
+				
+				values.clear();
+				values.put( DbSchema.COL_ID_REALIZATION, totId);
+				values.put( DbSchema.COL_ID_STUDENT_GROUP, ryhmaId);
+				db.insert(DbSchema.TBL_REALIZATION_TO_STUDENT_GROUP, null, values);
+
+				values.clear();
+				values.put( DbSchema.COL_ID_RESERVATION, varId);
+				values.put( DbSchema.COL_ID_STUDENT_GROUP, ryhmaId);
+				db.insert(DbSchema.TBL_RESERVATION_TO_STUDENT_GROUP, null, values);
 				
 				db.setTransactionSuccessful();
 			} catch (SQLException e) {
@@ -92,10 +112,13 @@ public class LukkariActivity extends Activity
 			Cursor c;
 			String select = "SELECT COUNT(*) FROM ";
 			String[] tables = {
-				DbSchema.TBL_LUKKARI,
-				DbSchema.TBL_REALIZATION,
-				DbSchema.TBL_LUKKARI_TO_REALIZATION,
-				DbSchema.TBL_RESERVATION
+					DbSchema.TBL_LUKKARI,
+					DbSchema.TBL_REALIZATION,
+					DbSchema.TBL_LUKKARI_TO_REALIZATION,
+					DbSchema.TBL_RESERVATION,
+					DbSchema.TBL_STUDENT_GROUP,
+					DbSchema.TBL_REALIZATION_TO_STUDENT_GROUP,
+					DbSchema.TBL_RESERVATION_TO_STUDENT_GROUP
 			};
 			for(int i = tables.length - 1; i >= 0; i--) {
 				c = db.rawQuery(select + tables[i], new String[]{});
@@ -189,6 +212,81 @@ public class LukkariActivity extends Activity
 	
 	@Override
 	public void onResultItemsAdded(ArrayList<ResultItem> items, int itemType) {
-		Log.d(TAG, "Received " + items.size() + " items to be added.");
+		
+//		SQLiteOpenHelper helper = new DatabaseHelper(getApplication());
+//		SQLiteDatabase db = helper.getWritableDatabase();
+//		
+//		db.beginTransaction();
+//		
+//		try {
+//			ContentValues values = new ContentValues();
+			
+			switch( itemType) {
+			
+			case ToteutusListFragment.TYPE_REALIZATION :
+				new SqlRealizationAddingTask().execute( 
+						items.toArray( new Realization[ items.size()]));
+				
+				break;
+				
+			case ToteutusListFragment.TYPE_RESERVATION :
+				new SqlReservationAddingTask().execute( 
+						items.toArray( new Reservation[ items.size()]));
+				
+				break;
+				
+			default:
+				break;
+			}
+			
+//			db.setTransactionSuccessful();
+//		} catch( SQLException e) {
+//			Log.d(TAG, "Error while inserting to db");
+//		} finally {
+//			db.endTransaction();
+//		}
+	}
+
+	private class SqlRealizationAddingTask extends AsyncTask<Realization, Void, Boolean> {
+		
+		private final String TAG = SqlRealizationAddingTask.class.getSimpleName();
+		
+		@Override
+		protected Boolean doInBackground(Realization... params) {
+//			Log.d(TAG, "Needs implementation!");
+			
+			SQLiteOpenHelper helper = new DatabaseHelper(getApplication());
+			SQLiteDatabase db = helper.getWritableDatabase();
+			SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+			
+			builder.setTables( DbSchema.TBL_LUKKARI);
+			builder.appendWhere( 
+					DbSchema.COL_NAME + " = '" + TEST_LUKKARI_NAME + "'");
+			Cursor cursor = builder.query(db, 
+					new String[]{ Lukkari._ID,  Lukkari.LUKKARI_NAME}, 
+					null,
+					null, 
+					null, 
+					null,
+					Lukkari.LUKKARI_NAME + " ASC");
+			cursor.moveToFirst();
+			int idx = cursor.getInt( cursor.getColumnIndex( DbSchema.COL_ID));
+			
+			Log.d(TAG, "Tulosten m‰‰r‰: " + cursor.getCount());
+			Log.d(TAG, "Lukkarin " + TEST_LUKKARI_NAME + " indeksi: " + idx);
+			
+			return false;
+		}
+	}
+	
+	private class SqlReservationAddingTask extends AsyncTask<Reservation, Void, Boolean> {
+		
+		private final String TAG = SqlReservationAddingTask.class.getSimpleName();
+		
+		@Override
+		protected Boolean doInBackground(Reservation... params) {
+			Log.d(TAG, "Needs implementation!");
+			return false;
+		}
 	}
 }
