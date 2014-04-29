@@ -30,7 +30,7 @@ import fi.sokira.metropolialukkari.models.Resource;
 import fi.sokira.metropolialukkari.models.ResultItem;
 import fi.sokira.metropolialukkari.models.StudentGroup;
 
-public class ToteutusListFragment extends ListFragment {
+public class ResultListFragment extends ListFragment {
 
 	protected final static String MAP_IMPL_NAME = "name";
 	protected final static String MAP_GROUP_ID = "group";
@@ -41,7 +41,7 @@ public class ToteutusListFragment extends ListFragment {
 	public static final int TYPE_RESERVATION = 1;
 	public static final int TYPE_REALIZATION = 2;
 	
-	private static final String TAG = ToteutusListFragment.class.getSimpleName();
+	private static final String TAG = ResultListFragment.class.getSimpleName();
 	
 	private int contentType = 0; 
 	private OnResultItemSelectedListener selectListener = null;
@@ -108,8 +108,8 @@ public class ToteutusListFragment extends ListFragment {
 	
 	private List<Map<String,String>> buildData() {
 		List<Map<String,String>> list = new ArrayList<Map<String,String>>();
-		list.add(putData("Käyttöjärjestelmät", "TO10"));
-		list.add(putData("Pelitekoälyt", "TO11K"));
+		list.add(putData("Kï¿½yttï¿½jï¿½rjestelmï¿½t", "TO10"));
+		list.add(putData("Pelitekoï¿½lyt", "TO11K"));
 		list.add(putData("Android ohjelmointi", "TO10"));
 		list.add(putData("Ammatillinen englanti", "T13M"));
 		return list;

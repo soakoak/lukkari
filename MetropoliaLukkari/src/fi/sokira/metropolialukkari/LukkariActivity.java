@@ -33,7 +33,7 @@ import fi.sokira.metropolialukkari.models.StudentGroup;
 public class LukkariActivity extends Activity
 		implements
 			HakuFragment.OnSearchListener,
-			ToteutusListFragment.OnResultItemSelectedListener {
+			ResultListFragment.OnResultItemSelectedListener {
 	
 	private final static String TAG = "LukkariActivity";
 	
@@ -76,7 +76,7 @@ public class LukkariActivity extends Activity
 				Log.d(TAG, "Lukkari row id: " + lkrId);
 				
 				values.clear();
-				values.put(DbSchema.COL_NAME, "Peliteko‰lyt");
+				values.put(DbSchema.COL_NAME, "Peliteko√§lyt");
 				values.put(DbSchema.COL_END_DATE, System.currentTimeMillis());
 				long totId = db.insert( DbSchema.TBL_REALIZATION, null, values);
 				Log.d( TAG, "Toteutus row id: " + totId);
@@ -146,27 +146,27 @@ public class LukkariActivity extends Activity
 	
 	@Override
 	public void onSearchFinished(Result result, int resultType) {
-		ToteutusListFragment frag = new ToteutusListFragment();
+		ResultListFragment frag = new ResultListFragment();
 		
 		Bundle args = new Bundle(2);
 		
 		switch( resultType) {
 		case OnSearchListener.RESULT_REALIZATION :
 			args.putParcelableArrayList( 
-					ToteutusListFragment.ARG_RESULT, 
+					ResultListFragment.ARG_RESULT, 
 					((RealizationResult) result).getRealizations());
 			args.putInt( 
-					ToteutusListFragment.ARG_RESULT_TYPE, 
-					ToteutusListFragment.TYPE_REALIZATION);
+					ResultListFragment.ARG_RESULT_TYPE, 
+					ResultListFragment.TYPE_REALIZATION);
 			break;
 			
 		case OnSearchListener.RESULT_RESERVATION :
 			args.putParcelableArrayList(
-					ToteutusListFragment.ARG_RESULT, 
+					ResultListFragment.ARG_RESULT, 
 					((ReservationResult) result).getReservations());
 			args.putInt(
-					ToteutusListFragment.ARG_RESULT_TYPE, 
-					ToteutusListFragment.TYPE_RESERVATION);
+					ResultListFragment.ARG_RESULT_TYPE, 
+					ResultListFragment.TYPE_RESERVATION);
 			break;
 		default:
 			break;
@@ -187,13 +187,13 @@ public class LukkariActivity extends Activity
 		
 		switch( itemType) {
 		
-		case ToteutusListFragment.TYPE_REALIZATION :
+		case ResultListFragment.TYPE_REALIZATION :
 			frag = new RealizationDetailFragment();
 			args.putParcelable( 
 					RealizationDetailFragment.ARG_REALIZATION, item);
 			break;
 			
-		case ToteutusListFragment.TYPE_RESERVATION :
+		case ResultListFragment.TYPE_RESERVATION :
 			frag = new ReservationDetailFragment();
 			args.putParcelable( 
 					ReservationDetailFragment.ARG_RESERVATION, item);
@@ -219,12 +219,12 @@ public class LukkariActivity extends Activity
 			
 		switch( itemType) {
 		
-		case ToteutusListFragment.TYPE_REALIZATION :
+		case ResultListFragment.TYPE_REALIZATION :
 			new SqlRealizationAddingTask().execute( 
 					items.toArray( new Realization[ items.size()]));
 			break;
 			
-		case ToteutusListFragment.TYPE_RESERVATION :
+		case ResultListFragment.TYPE_RESERVATION :
 			new SqlReservationAddingTask().execute( 
 					items.toArray( new Reservation[ items.size()]));
 			break;
@@ -247,7 +247,7 @@ public class LukkariActivity extends Activity
 			cursor.moveToFirst();
 			int lukId = cursor.getInt( cursor.getColumnIndex( DbSchema.COL_ID));
 			
-			Log.d(TAG, "Tulosten m‰‰r‰: " + cursor.getCount());
+			Log.d(TAG, "Tulosten m√§√§r√§: " + cursor.getCount());
 			Log.d(TAG, "Lukkarin " + TEST_LUKKARI_NAME + " indeksi: " + lukId);
 			
 			ContentValues values = new ContentValues();
@@ -306,7 +306,7 @@ public class LukkariActivity extends Activity
 					DbSchema.COL_CODE + " ASC");
 			cursor.moveToFirst();
 
-			Log.d(TAG, "Toteutusten m‰‰r‰: " + cursor.getCount());
+			Log.d(TAG, "Toteutusten m√§√§r√§: " + cursor.getCount());
 			
 			return true;
 		}
@@ -315,11 +315,11 @@ public class LukkariActivity extends Activity
 		protected void onPostExecute(Boolean result) {
 			if( result) {
 				Toast.makeText( getApplication(), 
-						"Toteutukset lis‰tty onnistuneeti.", 
+						"Toteutukset lis√§tty onnistuneeti.", 
 						Toast.LENGTH_LONG).show();
 			} else {
 				Toast.makeText( getApplication(), 
-						"Virhe lis‰tess‰ toteutuksia.", 
+						"Virhe lis√§tess√§ toteutuksia.", 
 						Toast.LENGTH_LONG).show();
 			}
 		}
@@ -340,7 +340,7 @@ public class LukkariActivity extends Activity
 				Resource realization = 
 						findResource( reservation.getResources(), Resource.TYPE_REALIZATION);
 				if( realization.getCode().isEmpty()) {
-					Log.d(TAG, "Tyhj‰ koodi");
+					Log.d(TAG, "Tyhj√§ koodi");
 					continue;
 				}
 				
@@ -405,7 +405,7 @@ public class LukkariActivity extends Activity
 					long resId = db.insertWithOnConflict( 
 							DbSchema.TBL_RESERVATION, 
 							null, values, SQLiteDatabase.CONFLICT_REPLACE);
-					Log.d(TAG, "Lis‰tyn varauksen rivi tietokannassa: " + resId);
+					Log.d(TAG, "Lis√§tyn varauksen rivi tietokannassa: " + resId);
 					
 					db.setTransactionSuccessful();
 				} catch (SQLException e) {
@@ -427,7 +427,7 @@ public class LukkariActivity extends Activity
 					null);
 			cursor.moveToFirst();
 
-			Log.d(TAG, "Varausten m‰‰r‰: " + cursor.getCount());
+			Log.d(TAG, "Varausten m√§√§r√§: " + cursor.getCount());
 			
 			return true;
 		}
@@ -436,11 +436,11 @@ public class LukkariActivity extends Activity
 		protected void onPostExecute(Boolean result) {
 			if( result) {
 				Toast.makeText( getApplication(), 
-						"Varaukset lis‰tty onnistuneeti.", 
+						"Varaukset lis√§tty onnistuneeti.", 
 						Toast.LENGTH_LONG).show();
 			} else {
 				Toast.makeText( getApplication(), 
-						"Virhe lis‰tess‰ varauksia.", 
+						"Virhe lis√§tess√§ varauksia.", 
 						Toast.LENGTH_LONG).show();
 			}
 		}
