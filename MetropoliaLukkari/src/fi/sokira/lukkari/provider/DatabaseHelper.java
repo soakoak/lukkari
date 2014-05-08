@@ -46,10 +46,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		for( String op : createOperations) {
 			db.execSQL( op);
 		}
-		
-		for( String tbl : TABLES) {
-			printTableInfo(db, tbl);
-		}
 	}
 
 	@Override
@@ -57,34 +53,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		Log.d(TAG, "Upgrading database from version " + oldVersion + " to "
 				+ newVersion + ", all previous data will be destroyed.");
 
-		String[] dropStatements = {
-				DbSchema.DROP_TBL_LUKKARI,
-				DbSchema.DROP_TBL_REALIZATION,
-				DbSchema.DROP_TBL_LUKKARI_TO_REALIZATION,
-				DbSchema.DROP_TBL_RESERVATION,
-				DbSchema.DROP_TBL_STUDENT_GROUP,
-				DbSchema.DROP_TBL_REALIZATION_TO_STUDENT_GROUP,
-				DbSchema.DROP_TBL_RESERVATION_TO_STUDENT_GROUP
-		};
-		
-		int i = 0;
-		String select = "SELECT COUNT(*) FROM ";
-		db.beginTransaction();
-		try {
-			for(i = TABLES.length - 1; i >= 0; i--) {
-				Cursor c = db.rawQuery(select + TABLES[i], new String[]{});
-				c.moveToFirst();
-				Log.d(TAG, "Table " + TABLES[i] + " entry count: " + c.getInt(0));
-				if( c.getInt(0) > 0); 
-					db.execSQL( dropStatements[i]);
-			}
-			db.setTransactionSuccessful();
-		} catch (SQLException e) {
-			Log.d(TAG, "Error while dropping tables. "
-					+ "Sentence error came in was: " + dropStatements[i]);
-		} finally {
-			db.endTransaction();
-		}
+		clearDatabase(db);
 		
 		// TODO http://stackoverflow.com/a/3505944
 
@@ -130,4 +99,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		}
 	}
 	
+	public static void clearDatabase(SQLiteDatabase db) {
+		int i = 0;
+		String select = "SELECT COUNT(*) FROM ";
+		String dropStatement = "";
+		db.beginTransaction();
+		try {
+			for(i = TABLES.length - 1; i >= 0; i--) {
+				Cursor c = db.rawQuery(select + TABLES[i], new String[]{});
+				c.moveToFirst();
+				if( c.getInt(0) > 0); 
+					dropStatement = "DROP TABLE IF EXISTS " + TABLES[i];
+					db.execSQL( dropStatement);
+			}
+			db.setTransactionSuccessful();
+		} catch (SQLException e) {
+			Log.d(TAG, "Error while dropping tables. "
+					+ "Sentence error came in was: " + dropStatement);
+		} finally {
+			db.endTransaction();
+		}
+	}
 }
