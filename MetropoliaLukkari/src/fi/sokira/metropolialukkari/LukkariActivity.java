@@ -14,8 +14,6 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.Toast;
 import fi.sokira.lukkari.provider.DatabaseHelper;
 import fi.sokira.lukkari.provider.DbSchema;
@@ -51,92 +49,6 @@ public class LukkariActivity extends Activity
 					new HakuFragment())
 			.commit();
 		}
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		getMenuInflater().inflate(R.menu.lukkari, menu);
-		return true;
-	}
-	
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch( item.getItemId()) {
-		case R.id.test :
-			SQLiteOpenHelper helper = new DatabaseHelper( this);
-			helper.onUpgrade(helper.getWritableDatabase(), 1, 2);
-			SQLiteDatabase db = helper.getWritableDatabase();
-			
-			db.beginTransaction();
-			
-			try {
-				ContentValues values = new ContentValues();
-				values.put(DbSchema.COL_NAME, TEST_LUKKARI_NAME);
-				long lkrId = db.insert( DbSchema.TBL_LUKKARI, null, values);
-				Log.d(TAG, "Lukkari row id: " + lkrId);
-				
-				values.clear();
-				values.put(DbSchema.COL_NAME, "Peliteko√§lyt");
-				values.put(DbSchema.COL_END_DATE, System.currentTimeMillis());
-				long totId = db.insert( DbSchema.TBL_REALIZATION, null, values);
-				Log.d( TAG, "Toteutus row id: " + totId);
-				
-				values.clear();
-				values.put(DbSchema.COL_ID_LUKKARI, lkrId);
-				values.put(DbSchema.COL_ID_REALIZATION, totId);
-				db.insert( DbSchema.TBL_LUKKARI_TO_REALIZATION, null, values);
-				
-				values.clear();
-				values.put(DbSchema.COL_ID_REALIZATION, totId);
-				values.put(DbSchema.COL_ROOM, "U204");
-				values.put(DbSchema.COL_END_DATE, System.currentTimeMillis());
-				long varId = db.insert(DbSchema.TBL_RESERVATION, null, values);
-				
-				values.clear();
-				values.put(DbSchema.COL_CODE, "TO11K");
-				long ryhmaId = db.insert( DbSchema.TBL_STUDENT_GROUP, null, values);
-				
-				values.clear();
-				values.put( DbSchema.COL_ID_REALIZATION, totId);
-				values.put( DbSchema.COL_ID_STUDENT_GROUP, ryhmaId);
-				db.insert(DbSchema.TBL_REALIZATION_TO_STUDENT_GROUP, null, values);
-
-				values.clear();
-				values.put( DbSchema.COL_ID_RESERVATION, varId);
-				values.put( DbSchema.COL_ID_STUDENT_GROUP, ryhmaId);
-				db.insert(DbSchema.TBL_RESERVATION_TO_STUDENT_GROUP, null, values);
-				
-				db.setTransactionSuccessful();
-			} catch (SQLException e) {
-				Log.d(TAG, "Error while inserting to db");
-			} finally {
-				db.endTransaction();
-			}
-			
-			Cursor c;
-			String select = "SELECT COUNT(*) FROM ";
-			String[] tables = {
-					DbSchema.TBL_LUKKARI,
-					DbSchema.TBL_REALIZATION,
-					DbSchema.TBL_LUKKARI_TO_REALIZATION,
-					DbSchema.TBL_RESERVATION,
-					DbSchema.TBL_STUDENT_GROUP,
-					DbSchema.TBL_REALIZATION_TO_STUDENT_GROUP,
-					DbSchema.TBL_RESERVATION_TO_STUDENT_GROUP
-			};
-			for(int i = tables.length - 1; i >= 0; i--) {
-				c = db.rawQuery(select + tables[i], new String[]{});
-				c.moveToFirst();
-				if( c.getInt(0) > 0) {
-					Log.d(TAG, "Table " + tables[i] + " seems to work.");
-				} else {
-					Log.d(TAG, "Error while reading table " + tables[i] + ".");
-				}
-			}
-			db.close();
-			return true;
-		}
-		return super.onOptionsItemSelected(item);
 	}
 
 	@Override
@@ -247,7 +159,7 @@ public class LukkariActivity extends Activity
 			cursor.moveToFirst();
 			int lukId = cursor.getInt( cursor.getColumnIndex( DbSchema.COL_ID));
 			
-			Log.d(TAG, "Tulosten m√§√§r√§: " + cursor.getCount());
+			Log.d(TAG, "Tulosten m‰‰r‰: " + cursor.getCount());
 			Log.d(TAG, "Lukkarin " + TEST_LUKKARI_NAME + " indeksi: " + lukId);
 			
 			ContentValues values = new ContentValues();
@@ -306,7 +218,7 @@ public class LukkariActivity extends Activity
 					DbSchema.COL_CODE + " ASC");
 			cursor.moveToFirst();
 
-			Log.d(TAG, "Toteutusten m√§√§r√§: " + cursor.getCount());
+			Log.d(TAG, "Toteutusten m‰‰r‰: " + cursor.getCount());
 			
 			return true;
 		}
@@ -315,11 +227,11 @@ public class LukkariActivity extends Activity
 		protected void onPostExecute(Boolean result) {
 			if( result) {
 				Toast.makeText( getApplication(), 
-						"Toteutukset lis√§tty onnistuneeti.", 
+						"Toteutukset lis‰tty onnistuneeti.", 
 						Toast.LENGTH_LONG).show();
 			} else {
 				Toast.makeText( getApplication(), 
-						"Virhe lis√§tess√§ toteutuksia.", 
+						"Virhe lis‰tess‰ toteutuksia.", 
 						Toast.LENGTH_LONG).show();
 			}
 		}
@@ -340,7 +252,7 @@ public class LukkariActivity extends Activity
 				Resource realization = 
 						findResource( reservation.getResources(), Resource.TYPE_REALIZATION);
 				if( realization.getCode().isEmpty()) {
-					Log.d(TAG, "Tyhj√§ koodi");
+					Log.d(TAG, "Tyhj‰ koodi");
 					continue;
 				}
 				
@@ -405,7 +317,7 @@ public class LukkariActivity extends Activity
 					long resId = db.insertWithOnConflict( 
 							DbSchema.TBL_RESERVATION, 
 							null, values, SQLiteDatabase.CONFLICT_REPLACE);
-					Log.d(TAG, "Lis√§tyn varauksen rivi tietokannassa: " + resId);
+					Log.d(TAG, "Lis‰tyn varauksen rivi tietokannassa: " + resId);
 					
 					db.setTransactionSuccessful();
 				} catch (SQLException e) {
@@ -427,7 +339,7 @@ public class LukkariActivity extends Activity
 					null);
 			cursor.moveToFirst();
 
-			Log.d(TAG, "Varausten m√§√§r√§: " + cursor.getCount());
+			Log.d(TAG, "Varausten m‰‰r‰: " + cursor.getCount());
 			
 			return true;
 		}
@@ -436,11 +348,11 @@ public class LukkariActivity extends Activity
 		protected void onPostExecute(Boolean result) {
 			if( result) {
 				Toast.makeText( getApplication(), 
-						"Varaukset lis√§tty onnistuneeti.", 
+						"Varaukset lis‰tty onnistuneeti.", 
 						Toast.LENGTH_LONG).show();
 			} else {
 				Toast.makeText( getApplication(), 
-						"Virhe lis√§tess√§ varauksia.", 
+						"Virhe lis‰tess‰ varauksia.", 
 						Toast.LENGTH_LONG).show();
 			}
 		}
