@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.util.Log;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
@@ -29,6 +30,35 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	
 	public DatabaseHelper(Context context) {
 		super(context, NAME, null, VERSION);
+	}
+	
+	protected static SQLiteQueryBuilder appendWhere(
+			SQLiteQueryBuilder builder, String target, String in) {
+		builder.appendWhereEscapeString(target);
+		builder.appendWhere(" = ");
+		builder.appendWhereEscapeString(in);
+		
+		return builder;
+	}
+	
+	public static Cursor doQuery(SQLiteDatabase db, 
+			String inTables, String[] projection) {
+		return doQuery(db, inTables, projection, null);
+	}
+	
+	public static Cursor doQuery(SQLiteDatabase db, 
+			String inTables, String[] projection, String sortOrder) {
+		
+		SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+		builder.setTables( inTables);
+		return builder.query(
+				db, 
+				projection, 
+				null,
+				null, 
+				null, 
+				null,
+				sortOrder);
 	}
 
 	@Override
