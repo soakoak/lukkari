@@ -50,7 +50,7 @@ public class LukkariActivity extends Activity
 			.commit();
 		}
 	}
-
+	
 	@Override
 	public void onSearchInitiated() {
 		Log.d( TAG, "Haku aloitettu");
@@ -154,6 +154,8 @@ public class LukkariActivity extends Activity
 		protected Boolean doInBackground(Realization... params) {
 			SQLiteOpenHelper helper = new DatabaseHelper(getApplication());
 			SQLiteDatabase db = helper.getWritableDatabase();
+			SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+			builder.setTables(DbSchema.TBL_REALIZATION);
 			
 			Cursor cursor = getLukkariByName(db, TEST_LUKKARI_NAME);
 			cursor.moveToFirst();
@@ -165,22 +167,43 @@ public class LukkariActivity extends Activity
 			ContentValues values = new ContentValues();
 			long relzId, groupId;
 			
+			String relzWhere = DbSchema.COL_CODE + " = ?";
+			
 			db.beginTransaction();
 			try {
 				for( Realization relz : params) {
+					cursor = builder.query(db, 
+							new String[]{ DbSchema.COL_ID }, 
+							relzWhere, 
+							new String[]{ relz.getCode() }, 
+							null,
+							null, 
+							null);
+					
 					values.clear();
 					values.put( DbSchema.COL_CODE, relz.getCode());
 					values.put( DbSchema.COL_NAME, relz.getName());
 					values.put( DbSchema.COL_START_DATE, relz.getStartDate().getTime());
 					values.put( DbSchema.COL_END_DATE, relz.getEndDate().getTime());
-					relzId = db.insertWithOnConflict( DbSchema.TBL_REALIZATION, 
-							null, values, SQLiteDatabase.CONFLICT_REPLACE);
+
+					if( cursor.getCount() == 0) {
+						relzId = db.insertWithOnConflict( DbSchema.TBL_REALIZATION, 
+								null, values, SQLiteDatabase.CONFLICT_IGNORE);
+					} else {
+						relzId = getId(cursor, 0);
+						db.updateWithOnConflict( 
+								DbSchema.TBL_REALIZATION, 
+								values, 
+								relzWhere, 
+								new String[]{ relz.getCode() }, 
+								SQLiteDatabase.CONFLICT_FAIL);
+					}
 					
 					for( StudentGroup group : relz.getStudentGroups()) {
 						values.clear();
 						values.put( DbSchema.COL_CODE, group.getCode());
 						groupId = db.insertWithOnConflict( DbSchema.TBL_STUDENT_GROUP, 
-								null, values, SQLiteDatabase.CONFLICT_REPLACE);
+								null, values, SQLiteDatabase.CONFLICT_IGNORE);
 						
 						values.clear();
 						values.put( DbSchema.COL_ID_REALIZATION, relzId);
@@ -206,7 +229,7 @@ public class LukkariActivity extends Activity
 				db.endTransaction();
 			}
 			
-			SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+			builder = new SQLiteQueryBuilder();
 			
 			builder.setTables( DbSchema.TBL_REALIZATION);
 			cursor = builder.query(db, 
@@ -249,8 +272,10 @@ public class LukkariActivity extends Activity
 			ContentValues values = new ContentValues();
 			
 			for( Reservation reservation : params) {	
-				Resource realization = 
-						findResource( reservation.getResources(), Resource.TYPE_REALIZATION);
+				Resource realization = findResource(
+						reservation.getResources(), 
+						Resource.TYPE_REALIZATION);
+				
 				if( realization.getCode().isEmpty()) {
 					Log.d(TAG, "Tyhjä koodi");
 					continue;
@@ -314,10 +339,77 @@ public class LukkariActivity extends Activity
 							reservation.getStartDate().getTime());
 					values.put( DbSchema.COL_END_DATE, 
 							reservation.getEndDate().getTime());
-					long resId = db.insertWithOnConflict( 
-							DbSchema.TBL_RESERVATION, 
-							null, values, SQLiteDatabase.CONFLICT_REPLACE);
-					Log.d(TAG, "Lisätyn varauksen rivi tietokannassa: " + resId);
+					long resId;
+					try {
+						resId = db.insertOrThrow( 
+							DbSchema.TBL_RESERVATION, null, values);
+					} catch( SQLException e) {
+						Log.d(TAG, "There was an existing record of the reservation.");
+						builder = new SQLiteQueryBuilder();
+						builder.setTables( DbSchema.TBL_RESERVATION);
+						cursor = builder.query(db,
+							new String[]{ DbSchema.COL_ID }, 
+							DbSchema.COL_ROOM + " = ? "
+								+ "AND " + DbSchema.COL_START_DATE + "= ? "
+								+ "AND " + DbSchema.COL_END_DATE + " = ?", 
+							new String[]{ 
+								roomCode, 
+								String.valueOf(reservation.getStartDate().getTime()), 
+								String.valueOf(reservation.getEndDate().getTime()) 									
+							}, 
+							null,
+							null, 
+							null);
+						
+						resId = getId( cursor, 0);
+					}
+					
+					ArrayList<Resource> studentGroups = findAllResources(
+							reservation.getResources(), 
+							Resource.TYPE_STUDENT_GROUP);
+					
+					long groupId;
+					for(Resource group : studentGroups) {
+						String groupCode = group.getName();
+						
+						values.clear();
+						values.put( DbSchema.COL_CODE, groupCode);
+						try{
+							groupId = db.insertOrThrow( DbSchema.TBL_STUDENT_GROUP, 
+								null, values);
+						} catch( SQLException e) {
+							Log.d(TAG, 
+								groupCode + ": there was an existing record.");
+							
+							builder = new SQLiteQueryBuilder();
+							builder.setTables( DbSchema.TBL_STUDENT_GROUP);
+							cursor = builder.query(db,
+								new String[]{ DbSchema.COL_ID }, 
+								DbSchema.COL_CODE + " = ?", 
+								new String[]{ 
+									groupCode
+								}, 
+								null,
+								null, 
+								null);
+							
+							groupId = getId( cursor, 0);
+						}
+						
+						values.clear();
+						values.put( DbSchema.COL_ID_REALIZATION, relzId);
+						values.put( DbSchema.COL_ID_STUDENT_GROUP, groupId);
+						db.insertWithOnConflict( 
+								DbSchema.TBL_REALIZATION_TO_STUDENT_GROUP, 
+								null, values, SQLiteDatabase.CONFLICT_IGNORE);
+						
+						values.clear();
+						values.put( DbSchema.COL_ID_RESERVATION, resId);
+						values.put( DbSchema.COL_ID_STUDENT_GROUP, groupId);
+						db.insertWithOnConflict( 
+								DbSchema.TBL_RESERVATION_TO_STUDENT_GROUP, 
+								null, values, SQLiteDatabase.CONFLICT_IGNORE);
+					}
 					
 					db.setTransactionSuccessful();
 				} catch (SQLException e) {
@@ -357,13 +449,27 @@ public class LukkariActivity extends Activity
 			}
 		}
 		
-		private Resource findResource( Collection<Resource> resources, String resourceType) {
+		private Resource findResource( 
+				Collection<Resource> resources, String resourceType) {
 			for( Resource resource : resources) {
 				if( resource.getType().equals( resourceType)) {
 					return resource;
 				}
 			}
 			return null;
+		}
+		
+		private ArrayList<Resource> findAllResources( 
+				Collection<Resource> resources, String resourceType) {
+			ArrayList<Resource> subList = new ArrayList<Resource>( resources.size() / 2);
+		
+			for( Resource resource : resources) {
+				if( resource.getType().equals( resourceType)) {
+					subList.add( resource);
+				}
+			}
+			
+			return subList;
 		}
 	}
 	
