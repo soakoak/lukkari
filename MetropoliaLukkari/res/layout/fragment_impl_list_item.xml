@@ -6,21 +6,21 @@
     android:background="?android:attr/activatedBackgroundIndicator" >
 
     <TextView
-        android:id="@+id/impl_name"
+        android:id="@+id/text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="right"
-        android:text="@id/impl_name"
-        android:textSize="20sp"
-        android:textColor="@color/black" />
+        android:text="@id/text"
+        android:textColor="@color/black"
+        android:textSize="20sp" />
 
     <TextView
-        android:id="@+id/group_id"
+        android:id="@+id/subtext"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="right"
-        android:text="@id/group_id"
-        android:textSize="16sp"
-        android:textColor="@color/black" />
+        android:text="@id/subtext"
+        android:textColor="@color/black"
+        android:textSize="16sp" />
 
 </LinearLayout>

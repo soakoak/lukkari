@@ -76,7 +76,7 @@ public class ResultListFragment extends ListFragment {
 		ListAdapter adapter = null;
 		
 		int resource = R.layout.fragment_impl_list_item;
-		int[] to = { R.id.impl_name, R.id.group_id};
+		int[] to = { R.id.text, R.id.subtext};
 		
 		Bundle args = getArguments();
 		
