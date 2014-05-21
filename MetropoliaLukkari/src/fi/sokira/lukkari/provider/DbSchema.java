@@ -16,9 +16,12 @@ public interface DbSchema {
 							= "realization_to_student_group";
 	final static String TBL_RESERVATION_TO_STUDENT_GROUP 
 							= "reservation_to_student_group";
+	final static String TBL_DATA_LIST = "data_list";
 
 	final static String COL_ID = BaseColumns._ID;
 	final static String COL_NAME = "name"; //Nimi
+	final static String COL_NAME_LUKKARI = "l_name";
+	final static String COL_NAME_REALIZATION = "rz_name";
 	final static String COL_CODE = "code"; //Tunnus
 	final static String COL_ROOM = "room";
 	final static String COL_START_DATE = "startDate";
@@ -88,16 +91,25 @@ public interface DbSchema {
 				", " + COL_ID_STUDENT_GROUP + " INTEGER NOT NULL REFERENCES " + TBL_STUDENT_GROUP + "(" + COL_ID + ") ON DELETE CASCADE ON UPDATE CASCADE" +
 				", " + "CONSTRAINT unq UNIQUE (" + COL_ID_RESERVATION + ", " + COL_ID_STUDENT_GROUP + ")" +
 			")";
-	
-	final static String DROP_TBL_LUKKARI = "DROP TABLE IF EXISTS " + TBL_LUKKARI;
-	final static String DROP_TBL_REALIZATION = "DROP TABLE IF EXISTS " + TBL_REALIZATION;
-	final static String DROP_TBL_LUKKARI_TO_REALIZATION = "DROP TABLE IF EXISTS " + TBL_LUKKARI_TO_REALIZATION;
-	final static String DROP_TBL_RESERVATION = "DROP TABLE IF EXISTS " + TBL_RESERVATION;
-	final static String DROP_TBL_STUDENT_GROUP = "DROP TABLE IF EXISTS " + TBL_STUDENT_GROUP;
-	final static String DROP_TBL_REALIZATION_TO_STUDENT_GROUP = "DROP TABLE IF EXISTS " + TBL_REALIZATION_TO_STUDENT_GROUP;
-	final static String DROP_TBL_RESERVATION_TO_STUDENT_GROUP = "DROP TABLE IF EXISTS " + TBL_RESERVATION_TO_STUDENT_GROUP;
 
-//	final static String DEFAULT_TBL_CURRENCIES_SORT_ORDER = COL_NAME
-//			+ " ASC";
+	final static String CREATE_VIEW_DATA_LIST = 
+		"CREATE VIEW " + TBL_DATA_LIST + " AS "
+			+ "SELECT "
+			+ "rv." + COL_ID
+			+ ", l." + COL_NAME + " AS " + COL_NAME_LUKKARI 
+			+ ", rz." + COL_NAME + " AS " + COL_NAME_REALIZATION
+			+ ", rv." + COL_ROOM
+			+ ", rv." + COL_START_DATE 
+			+ ", rv." + COL_END_DATE
+				+ " FROM lukkari AS l"
+			+ " LEFT OUTER JOIN "
+				+ TBL_LUKKARI_TO_REALIZATION + " AS lr"
+				+ " ON l." + COL_ID + " = lr." + COL_ID_LUKKARI
+			+ " LEFT OUTER JOIN "
+				+ TBL_REALIZATION + " AS rz"
+				+ " ON lr." + COL_ID_REALIZATION + " = rz." + COL_ID
+			+ " INNER JOIN "
+				+ TBL_RESERVATION + " AS rv"
+				+ " ON rz." + COL_ID + " = rv." + COL_ID_REALIZATION;
 
 }
