@@ -14,6 +14,8 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 import fi.sokira.lukkari.provider.DatabaseHelper;
 import fi.sokira.lukkari.provider.DbSchema;
@@ -49,6 +51,35 @@ public class LukkariActivity extends Activity
 					new HakuFragment())
 			.commit();
 		}
+	}
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.lukkari, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch( item.getItemId()) {
+		case R.id.see_current :
+			Fragment frag = new LukkariDataListFragment();
+			Bundle args = new Bundle(1);
+			
+			args.putString( 
+					LukkariDataListFragment.ARG_LUKKARI_NAME, 
+					TEST_LUKKARI_NAME);
+			frag.setArguments(args);
+			
+			getFragmentManager()
+				.beginTransaction()
+				.replace(android.R.id.content, frag)
+				.addToBackStack( null)
+				.commit();
+			
+			return true;
+		}
+		return super.onOptionsItemSelected(item);
 	}
 	
 	@Override
@@ -145,8 +176,69 @@ public class LukkariActivity extends Activity
 			break;
 		}
 	}
+	
+	private abstract class SqlAddingTask<T> 
+						extends AsyncTask<T, Void, Boolean> {
+		
+		private SQLiteDatabase mDatabase = null;
+		
+		protected void setWritableDatabase( SQLiteDatabase db) {
+			mDatabase = db;
+		}
+		
+		protected Cursor getLukkariByName(String lukkariName) {			
+			SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+			
+			builder.setTables( DbSchema.TBL_LUKKARI);
+			builder.appendWhere( 
+					DbSchema.COL_NAME + " = '" + lukkariName + "'");
+			return builder.query(mDatabase, 
+					new String[]{ Lukkari._ID,  Lukkari.LUKKARI_NAME}, 
+					null,
+					null, 
+					null, 
+					null,
+					Lukkari.LUKKARI_NAME + " ASC");
+		}
+		
+		protected int getIdColumnValue( Cursor cursor, int idx) {
+			cursor.moveToPosition( idx);
+			return cursor.getInt( cursor.getColumnIndex( DbSchema.COL_ID));
+		}
+		
+		protected long insertStudentGroup(String groupCode) {
+			ContentValues values = new ContentValues();
+			values.put( DbSchema.COL_CODE, groupCode);
+			
+			long groupId;
+			try{
+				groupId = mDatabase.insertOrThrow( DbSchema.TBL_STUDENT_GROUP, 
+					null, values);
+			} catch( SQLException e) {
+				Log.d(TAG, 
+					groupCode + ": there was an existing record.");
+				
+				SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+				builder.setTables( DbSchema.TBL_STUDENT_GROUP);
+				Cursor cursor = builder.query(mDatabase,
+					new String[]{ DbSchema.COL_ID }, 
+					DbSchema.COL_CODE + " = ?", 
+					new String[]{ 
+						groupCode
+					}, 
+					null,
+					null, 
+					null);
+				
+				groupId = getIdColumnValue( cursor, 0);
+				cursor.close();
+			} 
+			
+			return groupId;
+		}
+	}
 
-	private class SqlRealizationAddingTask extends AsyncTask<Realization, Void, Boolean> {
+	private class SqlRealizationAddingTask extends SqlAddingTask<Realization> {
 		
 		private final String TAG = SqlRealizationAddingTask.class.getSimpleName();
 		
@@ -154,24 +246,34 @@ public class LukkariActivity extends Activity
 		protected Boolean doInBackground(Realization... params) {
 			SQLiteOpenHelper helper = new DatabaseHelper(getApplication());
 			SQLiteDatabase db = helper.getWritableDatabase();
-			SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
-			builder.setTables(DbSchema.TBL_REALIZATION);
+			setWritableDatabase(db);
+			SQLiteQueryBuilder builder;
 			
-			Cursor cursor = getLukkariByName(db, TEST_LUKKARI_NAME);
-			cursor.moveToFirst();
-			int lukId = cursor.getInt( cursor.getColumnIndex( DbSchema.COL_ID));
+			ContentValues values = new ContentValues();
+			long relzId, groupId, lukId;
+			
+			Cursor cursor = getLukkariByName(TEST_LUKKARI_NAME);
+			if( cursor.getCount() > 0) {
+				cursor.moveToFirst();
+				lukId = cursor.getInt( cursor.getColumnIndex( DbSchema.COL_ID));
+			} else {
+				values.clear();
+				values.put( DbSchema.COL_NAME, TEST_LUKKARI_NAME);
+				lukId = db.insertOrThrow( 
+						DbSchema.TBL_LUKKARI, null, values);
+			}
+			
 			
 			Log.d(TAG, "Tulosten m‰‰r‰: " + cursor.getCount());
 			Log.d(TAG, "Lukkarin " + TEST_LUKKARI_NAME + " indeksi: " + lukId);
-			
-			ContentValues values = new ContentValues();
-			long relzId, groupId;
 			
 			String relzWhere = DbSchema.COL_CODE + " = ?";
 			
 			db.beginTransaction();
 			try {
 				for( Realization relz : params) {
+					builder = new SQLiteQueryBuilder();
+					builder.setTables(DbSchema.TBL_REALIZATION);
 					cursor = builder.query(db, 
 							new String[]{ DbSchema.COL_ID }, 
 							relzWhere, 
@@ -190,7 +292,7 @@ public class LukkariActivity extends Activity
 						relzId = db.insertWithOnConflict( DbSchema.TBL_REALIZATION, 
 								null, values, SQLiteDatabase.CONFLICT_IGNORE);
 					} else {
-						relzId = getId(cursor, 0);
+						relzId = getIdColumnValue(cursor, 0);
 						db.updateWithOnConflict( 
 								DbSchema.TBL_REALIZATION, 
 								values, 
@@ -200,10 +302,7 @@ public class LukkariActivity extends Activity
 					}
 					
 					for( StudentGroup group : relz.getStudentGroups()) {
-						values.clear();
-						values.put( DbSchema.COL_CODE, group.getCode());
-						groupId = db.insertWithOnConflict( DbSchema.TBL_STUDENT_GROUP, 
-								null, values, SQLiteDatabase.CONFLICT_IGNORE);
+						groupId = insertStudentGroup(group.getCode());
 						
 						values.clear();
 						values.put( DbSchema.COL_ID_REALIZATION, relzId);
@@ -260,7 +359,7 @@ public class LukkariActivity extends Activity
 		}
 	}
 	
-	private class SqlReservationAddingTask extends AsyncTask<Reservation, Void, Boolean> {
+	private class SqlReservationAddingTask extends SqlAddingTask<Reservation> {
 		
 		private final String TAG = SqlReservationAddingTask.class.getSimpleName();
 		
@@ -268,6 +367,7 @@ public class LukkariActivity extends Activity
 		protected Boolean doInBackground(Reservation... params) {
 			SQLiteOpenHelper helper = new DatabaseHelper(getApplication());
 			SQLiteDatabase db = helper.getWritableDatabase();
+			setWritableDatabase(db);
 			SQLiteQueryBuilder builder = null;
 			ContentValues values = new ContentValues();
 			
@@ -309,7 +409,7 @@ public class LukkariActivity extends Activity
 								null, values, SQLiteDatabase.CONFLICT_IGNORE);
 						
 						int lukId = 
-							getId( getLukkariByName(db, TEST_LUKKARI_NAME), 0);
+							getIdColumnValue( getLukkariByName(TEST_LUKKARI_NAME), 0);
 						values.clear();
 						values.put( DbSchema.COL_ID_LUKKARI, lukId);
 						values.put( DbSchema.COL_ID_REALIZATION, relzId);
@@ -361,7 +461,7 @@ public class LukkariActivity extends Activity
 							null, 
 							null);
 						
-						resId = getId( cursor, 0);
+						resId = getIdColumnValue( cursor, 0);
 					}
 					
 					ArrayList<Resource> studentGroups = findAllResources(
@@ -372,29 +472,7 @@ public class LukkariActivity extends Activity
 					for(Resource group : studentGroups) {
 						String groupCode = group.getName();
 						
-						values.clear();
-						values.put( DbSchema.COL_CODE, groupCode);
-						try{
-							groupId = db.insertOrThrow( DbSchema.TBL_STUDENT_GROUP, 
-								null, values);
-						} catch( SQLException e) {
-							Log.d(TAG, 
-								groupCode + ": there was an existing record.");
-							
-							builder = new SQLiteQueryBuilder();
-							builder.setTables( DbSchema.TBL_STUDENT_GROUP);
-							cursor = builder.query(db,
-								new String[]{ DbSchema.COL_ID }, 
-								DbSchema.COL_CODE + " = ?", 
-								new String[]{ 
-									groupCode
-								}, 
-								null,
-								null, 
-								null);
-							
-							groupId = getId( cursor, 0);
-						}
+						groupId = insertStudentGroup(groupCode);
 						
 						values.clear();
 						values.put( DbSchema.COL_ID_REALIZATION, relzId);
@@ -471,25 +549,5 @@ public class LukkariActivity extends Activity
 			
 			return subList;
 		}
-	}
-	
-	protected Cursor getLukkariByName( SQLiteDatabase db, String lukkariName) {
-		SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
-		
-		builder.setTables( DbSchema.TBL_LUKKARI);
-		builder.appendWhere( 
-				DbSchema.COL_NAME + " = '" + lukkariName + "'");
-		return builder.query(db, 
-				new String[]{ Lukkari._ID,  Lukkari.LUKKARI_NAME}, 
-				null,
-				null, 
-				null, 
-				null,
-				Lukkari.LUKKARI_NAME + " ASC");
-	}
-	
-	protected int getId( Cursor cursor, int idx) {
-		cursor.moveToPosition( idx);
-		return cursor.getInt( cursor.getColumnIndex( DbSchema.COL_ID));
 	}
 }

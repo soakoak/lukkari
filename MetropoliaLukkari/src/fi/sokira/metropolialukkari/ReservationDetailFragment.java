@@ -72,30 +72,6 @@ public class ReservationDetailFragment extends Fragment {
 			};
 			
 			lv.setAdapter(adapter);
-
-//			text = (TextView) v.findViewById( R.id.code);
-//			text.setText( text.getText() + ": " + realization.getCode());
-//			
-//			text = (TextView) v.findViewById( R.id.name);
-//			text.setText( text.getText() + ": " + realization.getName());
-//		
-//			text = (TextView) v.findViewById( R.id.student_groups);
-//			strb = new StringBuilder();
-//			List<StudentGroup> grps = realization.getStudentGroups();
-//			for( int i = 0; i < grps.size() - 1; i++) {
-//				strb.append( grps.get(i).getCode());
-//				strb.append( ", ");
-//			}
-//			strb.append( grps.get( grps.size() - 1).getCode());
-//			text.setText( text.getText() + ": " + strb.toString());
-//			
-//			text = (TextView) v.findViewById( R.id.start_date);
-//			text.setText( 
-//					text.getText() + ": " + df.format( realization.getStartDate()));
-//			
-//			text = (TextView) v.findViewById( R.id.end_date);
-//			text.setText( 
-//					text.getText() + ": " + df.format( realization.getEndDate()));
 		}
 		
 		return v;
