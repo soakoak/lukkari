@@ -1,7 +1,5 @@
 package fi.sokira.metropolialukkari;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -9,24 +7,12 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.ParseException;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.util.EntityUtils;
-
 import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.Fragment;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -40,15 +26,8 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import fi.sokira.metropolialukkari.models.MetropoliaQuery;
-import fi.sokira.metropolialukkari.models.Realization;
 import fi.sokira.metropolialukkari.models.RealizationQuery;
 import fi.sokira.metropolialukkari.models.RealizationResult;
-import fi.sokira.metropolialukkari.models.Reservation;
 import fi.sokira.metropolialukkari.models.ReservationQuery;
 import fi.sokira.metropolialukkari.models.ReservationResult;
 import fi.sokira.metropolialukkari.models.Result;
@@ -72,14 +51,30 @@ public class HakuFragment extends Fragment
 	
 	private final static String TAG = "HakuFragment";
 	
+	public static final int QUERY_RESERVATION = 1;
+	public static final int QUERY_REALIZATION = 2;
+	
 	protected int getQueryType() {
 		if(realizationView.getVisibility() == View.VISIBLE) {
-			return LukkariWebLoadTask.QUERY_REALIZATION;
+			return QUERY_REALIZATION;
 		} else if( reservationView.getVisibility() == View.VISIBLE) {
-			return LukkariWebLoadTask.QUERY_RESERVATION;
+			return QUERY_RESERVATION;
 		}
 		
 		return -1; 
+	}
+	
+	protected boolean isNetworkAvailable() {
+		ConnectivityManager connMgr = 
+				(ConnectivityManager) getActivity().getSystemService( 
+						Context.CONNECTIVITY_SERVICE);
+		NetworkInfo netInfo = connMgr.getActiveNetworkInfo();
+		
+		if( netInfo == null) {
+			return false;
+		} else {
+			return netInfo.isConnected();
+		}
 	}
 	
 	@Override
@@ -130,14 +125,8 @@ public class HakuFragment extends Fragment
 	public void onClick(View v) {
 		switch( v.getId()) {
 		case R.id.search_button :
-			ConnectivityManager connMgr = 
-				(ConnectivityManager) getActivity().getSystemService( 
-						Context.CONNECTIVITY_SERVICE);
-			NetworkInfo netInfo = connMgr.getActiveNetworkInfo();
-			
-			if( netInfo != null && netInfo.isConnected()) {
+			if( isNetworkAvailable() == true) {
 				int queryType = getQueryType();
-				MetropoliaQuery query = null; 
 				
 				String input = groupInput.getText().toString();
 				List<String> studentGroups = null;
@@ -147,28 +136,23 @@ public class HakuFragment extends Fragment
 				
 				input = startDateInput.getText().toString();
 				Date startDate = parseDateFromString( input);
-						
-				switch( queryType) {
-				case LukkariWebLoadTask.QUERY_REALIZATION :
-					query = new RealizationQuery()
+				
+				if( queryType == QUERY_REALIZATION) {
+					RealizationQuery query = new RealizationQuery()
 						.setStudentGroups( studentGroups)
 						.setStartDate( startDate);
-					break;
-				case LukkariWebLoadTask.QUERY_RESERVATION :
-					query = new ReservationQuery()
+					new RealizationWebTask().execute(query);
+				} else if (queryType == QUERY_RESERVATION) {
+					ReservationQuery query = new ReservationQuery()
 						.setStudentGroup( studentGroups)
 						.setStartDate( startDate)
 						.setSubject( subjectInput.getText().toString());
-					break;
+					new ReservationWebTask().execute(query);
 				}
-			
-				LukkariWebLoadTask task = 
-						new LukkariWebLoadTask( queryType);
-				task.execute( query);
 				
 				listener.onSearchInitiated();
 			} else {
-				Toast.makeText(getActivity(), "Virhe muodostaessa yhteyttä.", 
+				Toast.makeText(getActivity(), "Virhe muodostaessa yhteyttï¿½", 
 						Toast.LENGTH_LONG).show();
 			}
 			
@@ -252,156 +236,49 @@ public class HakuFragment extends Fragment
 		
 		public void onSearchInitiated();
 		
-		public void onSearchFinished( Result result, int resultType);
+		public void onSearchFinished( Result<?> result, int resultType);
 	}
 	
-	private class LukkariWebLoadTask extends AsyncTask<MetropoliaQuery, Void, Result> {
-		
-		public static final int QUERY_RESERVATION = 1;
-		public static final int QUERY_REALIZATION = 2;
+	private class ReservationWebTask 
+			extends WebQueryTask<ReservationQuery, ReservationResult> {
 
-		private static final String TAG = "LukkariWebLoadTask";
-		
 		private static final String reservationServiceUrl = 
 				"https://opendata.metropolia.fi/r1/reservation";
+		
+		public ReservationWebTask() {
+			super(ReservationResult.class);
+		}
+
+		@Override
+		protected String getServiceUrl() {
+			return reservationServiceUrl;
+		}
+
+		@Override
+		protected void onPostExecute(ReservationResult result) {
+			listener.onSearchFinished( result, OnSearchListener.RESULT_RESERVATION);
+		}
+	};
+	
+	private class RealizationWebTask 
+			extends WebQueryTask<RealizationQuery, RealizationResult> {
+
 		private static final String realizationServiceUrl = 
 				"https://opendata.metropolia.fi/r1/realization";
 		
-		private int queryType;
-		
-		public LukkariWebLoadTask(int queryType) {
-			this.queryType = queryType;
+		public RealizationWebTask() {
+			super(RealizationResult.class);
 		}
-		
+
 		@Override
-		protected Result doInBackground(MetropoliaQuery... params) {
-
-			String apikey = Secrets.METROPOLIA_API_KEY;
-			String contentType = "application/json";
-			String charset = HTTP.UTF_8;
-			
-			DefaultHttpClient client = new DefaultHttpClient();
-			
-			HttpParams clientParams = client.getParams();
-			HttpConnectionParams.setConnectionTimeout( clientParams, 30000);
-			HttpConnectionParams.setSoTimeout(clientParams, 30000);	
-			
-			HttpPost postMethod = null;
-			Result result = null;
-			
-			Gson gson = new GsonBuilder()
-				.setDateFormat("yyyy-MM-dd'T'HH:mm")
-				.disableHtmlEscaping()
-				.create();
-			
-			StringEntity entity = null;
-			String query = null;
-			
-			switch( queryType) {
-			case QUERY_REALIZATION:
-				postMethod = new HttpPost( realizationServiceUrl + "/search?apiKey=" + apikey);
-				query = gson.toJson( (RealizationQuery) params[0]);
-				break;
-				
-			case QUERY_RESERVATION:
-				postMethod = new HttpPost( reservationServiceUrl + "/search?apiKey=" + apikey);
-				query = gson.toJson( (ReservationQuery) params[0]);
-				break;
-			default:
-				break;
-			}
-			
-			Log.d(TAG, "Lähetettävä Json: " + query);
-			
-			try {
-				entity = new StringEntity( query);
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			}
-			
-			if( entity != null) {
-				entity.setContentType(contentType);
-				entity.setContentEncoding( charset);
-				postMethod.setEntity( entity);
-				
-				HttpResponse response = null;
-				String resultStr = null;
-				
-				try {
-					response = client.execute( postMethod);
-				} catch (ClientProtocolException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				} 
-				
-				if( response != null) {
-					try {
-						resultStr = EntityUtils.toString( response.getEntity(), charset);
-		
-					} catch (ParseException e) {
-						e.printStackTrace();
-					} catch (IOException e) {
-						e.printStackTrace();
-					} 
-				}
-
-				Log.d(TAG, "Result string length: " + resultStr.length());
-				if( resultStr.length() < 30) {
-					Log.d(TAG, resultStr);
-				}
-				
-				switch( queryType) {
-				case QUERY_REALIZATION :
-					result = gson.fromJson(
-							resultStr,
-							RealizationResult.class);
-					
-					RealizationResult realzResult = (RealizationResult) result;
-					Log.d(TAG, "Number of results: " + realzResult.getRealizations().size());
-					for( Realization realz : realzResult.getRealizations())
-					{
-						Log.d(TAG, "Realization name: " + realz.getName());
-					}
-					break;
-					
-				case QUERY_RESERVATION :
-					result = gson.fromJson(
-							resultStr,
-							ReservationResult.class);
-					ReservationResult reservResult = (ReservationResult) result;
-					Log.d(TAG, "Number of results: " + reservResult.getReservations().size());
-					for( Reservation reserv : reservResult.getReservations())
-					{
-						Log.d(TAG, "Reservation subject: " + reserv.getSubject());
-					}
-					break;
-				default:
-					break;
-				}
-			}
-			
-			return result;
+		protected String getServiceUrl() {
+			return realizationServiceUrl;
 		}
-		
+
 		@Override
-		protected void onPostExecute(Result result) {
-
-			if( result != null) {
-				switch( queryType) {
-				case QUERY_REALIZATION :
-					listener.onSearchFinished( result, OnSearchListener.RESULT_REALIZATION);
-					break;
-				case QUERY_RESERVATION :
-					listener.onSearchFinished( result, OnSearchListener.RESULT_RESERVATION);
-					break;
-				default:
-					Log.d(TAG, "Unknown result type");
-					break;
-				}
-			} else {
-				Log.d(TAG, "No result");
-			}
+		protected void onPostExecute(RealizationResult result) {
+			listener.onSearchFinished( result, OnSearchListener.RESULT_REALIZATION);
 		}
+		
 	}
 }

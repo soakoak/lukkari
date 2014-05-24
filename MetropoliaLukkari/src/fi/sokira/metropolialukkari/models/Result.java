@@ -1,5 +1,12 @@
 package fi.sokira.metropolialukkari.models;
 
-public interface Result {
+import java.util.ArrayList;
 
+public abstract class Result<T> {
+
+	public abstract ArrayList<T> getResults();
+	
+	public int getResultCount() {
+		return getResults().size();
+	}
 }
