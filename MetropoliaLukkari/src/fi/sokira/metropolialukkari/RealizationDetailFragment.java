@@ -9,8 +9,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import fi.sokira.metropolialukkari.models.Realization;
-import fi.sokira.metropolialukkari.models.StudentGroup;
+import fi.sokira.metropolialukkari.models.MpoliaRealization;
+import fi.sokira.metropolialukkari.models.MpoliaStudentGroup;
 
 public class RealizationDetailFragment extends Fragment {
 	
@@ -24,7 +24,7 @@ public class RealizationDetailFragment extends Fragment {
 		
 		Bundle args = getArguments();
 		
-		Realization realization = (Realization) args.getParcelable(ARG_REALIZATION);
+		MpoliaRealization realization = (MpoliaRealization) args.getParcelable(ARG_REALIZATION);
 		
 		if( realization != null) {
 			TextView text;
@@ -39,7 +39,7 @@ public class RealizationDetailFragment extends Fragment {
 		
 			text = (TextView) v.findViewById( R.id.student_groups);
 			strb = new StringBuilder();
-			List<StudentGroup> grps = realization.getStudentGroups();
+			List<MpoliaStudentGroup> grps = realization.getStudentGroups();
 			for( int i = 0; i < grps.size() - 1; i++) {
 				strb.append( grps.get(i).getCode());
 				strb.append( ", ");

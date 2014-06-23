@@ -3,7 +3,7 @@ package fi.sokira.metropolialukkari.models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class Resource implements Parcelable {
+public class MpoliaResource implements Parcelable {
 
 	public static final String TYPE_REALIZATION = "realization";
 	public static final String TYPE_ROOM = "room";
@@ -13,7 +13,7 @@ public class Resource implements Parcelable {
 	private String code;
 	private String name;
 	
-	public Resource() {
+	public MpoliaResource() {
 	}
 
 	public String getType() {
@@ -40,7 +40,7 @@ public class Resource implements Parcelable {
 		this.name = name;
 	}
 	
-	protected Resource(Parcel in) {
+	protected MpoliaResource(Parcel in) {
         type = in.readString();
         code = in.readString();
         name = in.readString();
@@ -58,15 +58,15 @@ public class Resource implements Parcelable {
         dest.writeString(name);
     }
 
-    public static final Parcelable.Creator<Resource> CREATOR = new Parcelable.Creator<Resource>() {
+    public static final Parcelable.Creator<MpoliaResource> CREATOR = new Parcelable.Creator<MpoliaResource>() {
         @Override
-        public Resource createFromParcel(Parcel in) {
-            return new Resource(in);
+        public MpoliaResource createFromParcel(Parcel in) {
+            return new MpoliaResource(in);
         }
 
         @Override
-        public Resource[] newArray(int size) {
-            return new Resource[size];
+        public MpoliaResource[] newArray(int size) {
+            return new MpoliaResource[size];
         }
     };
 }

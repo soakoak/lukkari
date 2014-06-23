@@ -7,14 +7,14 @@ import java.util.List;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class Reservation extends ResultItem {
+public class MpoliaReservation extends MpoliaResultItem {
 
 	private String subject;
 	private Date startDate;
 	private Date endDate;
-	private List<Resource> resources;
+	private List<MpoliaResource> resources;
 	
-	public Reservation() {
+	public MpoliaReservation() {
 	}
 
 	public String getSubject() {
@@ -41,23 +41,23 @@ public class Reservation extends ResultItem {
 		this.endDate = endDate;
 	}
 
-	public List<Resource> getResources() {
+	public List<MpoliaResource> getResources() {
 		return resources;
 	}
 
-	public void setResources(List<Resource> resources) {
+	public void setResources(List<MpoliaResource> resources) {
 		this.resources = resources;
 	}
 	
-    protected Reservation(Parcel in) {
+    protected MpoliaReservation(Parcel in) {
         subject = in.readString();
         long tmpStartDate = in.readLong();
         startDate = tmpStartDate != -1 ? new Date(tmpStartDate) : null;
         long tmpEndDate = in.readLong();
         endDate = tmpEndDate != -1 ? new Date(tmpEndDate) : null;
         if (in.readByte() == 0x01) {
-            resources = new ArrayList<Resource>();
-            in.readList(resources, Resource.class.getClassLoader());
+            resources = new ArrayList<MpoliaResource>();
+            in.readList(resources, MpoliaResource.class.getClassLoader());
         } else {
             resources = null;
         }
@@ -81,15 +81,15 @@ public class Reservation extends ResultItem {
         }
     }
 
-    public static final Parcelable.Creator<Reservation> CREATOR = new Parcelable.Creator<Reservation>() {
+    public static final Parcelable.Creator<MpoliaReservation> CREATOR = new Parcelable.Creator<MpoliaReservation>() {
         @Override
-        public Reservation createFromParcel(Parcel in) {
-            return new Reservation(in);
+        public MpoliaReservation createFromParcel(Parcel in) {
+            return new MpoliaReservation(in);
         }
 
         @Override
-        public Reservation[] newArray(int size) {
-            return new Reservation[size];
+        public MpoliaReservation[] newArray(int size) {
+            return new MpoliaReservation[size];
         }
     };
 }

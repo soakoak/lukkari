@@ -1,9 +1,7 @@
 package fi.sokira.metropolialukkari;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import android.app.Activity;
 import android.app.ListFragment;
@@ -22,13 +20,12 @@ import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
-import fi.sokira.metropolialukkari.models.Realization;
-import fi.sokira.metropolialukkari.models.Reservation;
-import fi.sokira.metropolialukkari.models.Resource;
-import fi.sokira.metropolialukkari.models.ResultItem;
-import fi.sokira.metropolialukkari.models.StudentGroup;
+import fi.sokira.metropolialukkari.models.MpoliaStudentGroup;
+import fi.sokira.metropolialukkari.models.MpoliaRealization;
+import fi.sokira.metropolialukkari.models.MpoliaReservation;
+import fi.sokira.metropolialukkari.models.MpoliaResource;
+import fi.sokira.metropolialukkari.models.MpoliaResultItem;
 
 public class ResultListFragment extends ListFragment {
 
@@ -81,18 +78,14 @@ public class ResultListFragment extends ListFragment {
 		Bundle args = getArguments();
 		
 		contentType = args.getInt(ARG_RESULT_TYPE, TYPE_NO_TYPE);
-		List<ResultItem> result = 
+		List<MpoliaResultItem> result = 
 				args.getParcelableArrayList(ARG_RESULT);
 		
-		if( result != null) {
-			adapter = new ResultAdapter(
-					getActivity(), 
-					resource,
-					to,
-					result);
-		} else {
-			adapter = getDefaultAdapter( resource, to);
-		}
+		adapter = new ResultAdapter(
+				getActivity(), 
+				resource,
+				to,
+				result);
 
 		setListAdapter(adapter);
 		
@@ -101,47 +94,18 @@ public class ResultListFragment extends ListFragment {
 	
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-		ResultItem item = (ResultItem) getListView().getItemAtPosition(position);
+		MpoliaResultItem item = (MpoliaResultItem) getListView().getItemAtPosition(position);
 		l.setItemChecked(position, false);
 		selectListener.onResultItemSelected(item, contentType);
 	}
 	
-	private List<Map<String,String>> buildData() {
-		List<Map<String,String>> list = new ArrayList<Map<String,String>>();
-		list.add(putData("K�ytt�j�rjestelm�t", "TO10"));
-		list.add(putData("Peliteko�lyt", "TO11K"));
-		list.add(putData("Android ohjelmointi", "TO10"));
-		list.add(putData("Ammatillinen englanti", "T13M"));
-		return list;
-	}
-	
-	private Map<String, String> putData(String implName, String implGroupId) {
-		Map<String, String> currency = new HashMap<String, String>();
-		currency.put(MAP_IMPL_NAME, implName);
-		currency.put(MAP_GROUP_ID, implGroupId);
-		return currency;
-	}
-	
-	private ListAdapter getDefaultAdapter( int resource, int[] to) {
-		List<Map<String,String>> entrys = buildData();
-		
-		String[] from = { MAP_IMPL_NAME, MAP_GROUP_ID };
-		
-		return new SimpleAdapter(
-					getActivity(), 
-					entrys, 
-					resource, 
-					from, 
-					to);
-	}
-	
-	private class ResultAdapter extends ArrayAdapter<ResultItem> {
+	private class ResultAdapter extends ArrayAdapter<MpoliaResultItem> {
 		
 		private int resource;
 		private int[] to;
 
 		public ResultAdapter(Context context, int resource, int[] to,
-				List<ResultItem> objects) {
+				List<MpoliaResultItem> objects) {
 			super(context, resource, objects);
 			
 			this.resource = resource;
@@ -166,14 +130,14 @@ public class ResultListFragment extends ListFragment {
 			
 			switch( contentType) {
 			case TYPE_REALIZATION:
-				Realization relz = (Realization) getItem(position);
+				MpoliaRealization relz = (MpoliaRealization) getItem(position);
 				
 				textV[0] = (TextView) v.findViewById( to[0]);
 				textV[1] = (TextView) v.findViewById( to[1]);
 
 				textV[0].setText( relz.getName());
 				
-				List<StudentGroup> grps = relz.getStudentGroups();
+				List<MpoliaStudentGroup> grps = relz.getStudentGroups();
 				for( int i = 0; i < grps.size() - 1; i++) {
 					strb.append( grps.get(i).getCode());
 					strb.append( " ");
@@ -184,15 +148,15 @@ public class ResultListFragment extends ListFragment {
 
 				break;
 			case TYPE_RESERVATION :
-				Reservation reserv = (Reservation) getItem( position);
+				MpoliaReservation reserv = (MpoliaReservation) getItem( position);
 				
 				textV[0] = (TextView) v.findViewById( to[0]);
 				textV[1] = (TextView) v.findViewById( to[1]);
 				
-				for( Resource resource : reserv.getResources()) {
-					if(resource.getType().equals( Resource.TYPE_REALIZATION)) {
+				for( MpoliaResource resource : reserv.getResources()) {
+					if(resource.getType().equals( MpoliaResource.TYPE_REALIZATION)) {
 						textV[0].setText( resource.getName());
-					} else if( resource.getType().equals( Resource.TYPE_STUDENT_GROUP)) {
+					} else if( resource.getType().equals( MpoliaResource.TYPE_STUDENT_GROUP)) {
 						strb.append( resource.getName());
 						strb.append( " ");
 					}
@@ -236,11 +200,11 @@ public class ResultListFragment extends ListFragment {
 				ListView lv = getListView();
 				SparseBooleanArray booleanArray = lv.getCheckedItemPositions();
 				
-				ArrayList<ResultItem> checkedItems = new ArrayList<ResultItem>( itemsChecked);
+				ArrayList<MpoliaResultItem> checkedItems = new ArrayList<MpoliaResultItem>( itemsChecked);
 				
 				for(int i = 0; i < lv.getCount(); i++) {
 					if( booleanArray.get(i) == true) {
-						checkedItems.add( (ResultItem) lv.getItemAtPosition( i));
+						checkedItems.add( (MpoliaResultItem) lv.getItemAtPosition( i));
 					}
 				}
 				
@@ -278,8 +242,8 @@ public class ResultListFragment extends ListFragment {
 	
 	public interface OnResultItemSelectedListener {
 		
-		public void onResultItemSelected( ResultItem item, int itemType);
+		public void onResultItemSelected( MpoliaResultItem item, int itemType);
 		
-		public void onResultItemsAdded( ArrayList<ResultItem> items, int itemType);
+		public void onResultItemsAdded( ArrayList<MpoliaResultItem> items, int itemType);
 	}
 }

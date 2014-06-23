@@ -3,21 +3,21 @@ package fi.sokira.metropolialukkari.models;
 import java.util.Date;
 import java.util.List;
 
-public class ReservationQuery implements MetropoliaQuery {
+public class MpoliaReservationQuery implements MpoliaQuery {
 
 	private String subject;
 	private Date startDate;
 	private Date endDate;
 	private List<String> studentGroup;
 	
-	public ReservationQuery() {
+	public MpoliaReservationQuery() {
 	}
 
 	public String getSubject() {
 		return subject;
 	}
 
-	public ReservationQuery setSubject(String subject) {
+	public MpoliaReservationQuery setSubject(String subject) {
 		this.subject = subject;
 		return this;
 	}
@@ -26,7 +26,7 @@ public class ReservationQuery implements MetropoliaQuery {
 		return startDate;
 	}
 
-	public ReservationQuery setStartDate(Date startDate) {
+	public MpoliaReservationQuery setStartDate(Date startDate) {
 		this.startDate = startDate;
 		return this;
 	}
@@ -35,7 +35,7 @@ public class ReservationQuery implements MetropoliaQuery {
 		return endDate;
 	}
 
-	public ReservationQuery setEndDate(Date endDate) {
+	public MpoliaReservationQuery setEndDate(Date endDate) {
 		this.endDate = endDate;
 		return this;
 	}
@@ -44,7 +44,7 @@ public class ReservationQuery implements MetropoliaQuery {
 		return studentGroup;
 	}
 
-	public ReservationQuery setStudentGroup(List<String> studentGroup) {
+	public MpoliaReservationQuery setStudentGroup(List<String> studentGroup) {
 		this.studentGroup = studentGroup;
 		return this;
 	}

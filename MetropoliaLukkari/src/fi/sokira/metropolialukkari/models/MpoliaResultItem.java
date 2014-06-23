@@ -3,7 +3,7 @@ package fi.sokira.metropolialukkari.models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public abstract class ResultItem implements Parcelable {
+public abstract class MpoliaResultItem implements Parcelable {
 
 	@Override
 	public abstract int describeContents();

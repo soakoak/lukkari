@@ -20,10 +20,10 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import fi.sokira.metropolialukkari.models.MetropoliaQuery;
-import fi.sokira.metropolialukkari.models.Result;
+import fi.sokira.metropolialukkari.models.MpoliaQuery;
+import fi.sokira.metropolialukkari.models.MpoliaResult;
 
-public abstract class WebQueryTask<T extends MetropoliaQuery, K extends Result<?>> extends AsyncTask<T, Void, K> {
+public abstract class WebQueryTask<T extends MpoliaQuery, K extends MpoliaResult<?>> extends AsyncTask<T, Void, K> {
 
 	private static final String TAG = "WebLoadTask";
 	

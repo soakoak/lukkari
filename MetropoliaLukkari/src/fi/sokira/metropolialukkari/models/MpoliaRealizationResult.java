@@ -2,16 +2,16 @@ package fi.sokira.metropolialukkari.models;
 
 import java.util.ArrayList;
 
-public class RealizationResult extends Result<Realization> {
+public class MpoliaRealizationResult extends MpoliaResult<MpoliaRealization> {
 
-	private  ArrayList<Realization> realizations;
+	private  ArrayList<MpoliaRealization> realizations;
 
-	public ArrayList<Realization> getRealizations() {
+	public ArrayList<MpoliaRealization> getRealizations() {
 		return realizations;
 	}
 
 	@Override
-	public ArrayList<Realization> getResults() {
+	public ArrayList<MpoliaRealization> getResults() {
 		return getRealizations();
 	}
 

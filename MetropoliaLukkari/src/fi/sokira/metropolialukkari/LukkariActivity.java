@@ -24,14 +24,14 @@ import fi.sokira.lukkari.provider.DatabaseHelper;
 import fi.sokira.lukkari.provider.DbSchema;
 import fi.sokira.lukkari.provider.LukkariContract.Lukkari;
 import fi.sokira.metropolialukkari.HakuFragment.OnSearchListener;
-import fi.sokira.metropolialukkari.models.Realization;
-import fi.sokira.metropolialukkari.models.RealizationResult;
-import fi.sokira.metropolialukkari.models.Reservation;
-import fi.sokira.metropolialukkari.models.ReservationResult;
-import fi.sokira.metropolialukkari.models.Resource;
-import fi.sokira.metropolialukkari.models.Result;
-import fi.sokira.metropolialukkari.models.ResultItem;
-import fi.sokira.metropolialukkari.models.StudentGroup;
+import fi.sokira.metropolialukkari.models.MpoliaRealization;
+import fi.sokira.metropolialukkari.models.MpoliaRealizationResult;
+import fi.sokira.metropolialukkari.models.MpoliaReservation;
+import fi.sokira.metropolialukkari.models.MpoliaReservationResult;
+import fi.sokira.metropolialukkari.models.MpoliaResource;
+import fi.sokira.metropolialukkari.models.MpoliaResult;
+import fi.sokira.metropolialukkari.models.MpoliaResultItem;
+import fi.sokira.metropolialukkari.models.MpoliaStudentGroup;
 
 public class LukkariActivity extends Activity
 		implements
@@ -91,7 +91,7 @@ public class LukkariActivity extends Activity
 	}
 	
 	@Override
-	public void onSearchFinished(Result<?> result, int resultType) {
+	public void onSearchFinished(MpoliaResult<?> result, int resultType) {
 		ResultListFragment frag = new ResultListFragment();
 		
 		Bundle args = new Bundle(2);
@@ -100,7 +100,7 @@ public class LukkariActivity extends Activity
 		case OnSearchListener.RESULT_REALIZATION :
 			args.putParcelableArrayList( 
 					ResultListFragment.ARG_RESULT, 
-					((RealizationResult) result).getRealizations());
+					((MpoliaRealizationResult) result).getRealizations());
 			args.putInt( 
 					ResultListFragment.ARG_RESULT_TYPE, 
 					ResultListFragment.TYPE_REALIZATION);
@@ -109,7 +109,7 @@ public class LukkariActivity extends Activity
 		case OnSearchListener.RESULT_RESERVATION :
 			args.putParcelableArrayList(
 					ResultListFragment.ARG_RESULT, 
-					((ReservationResult) result).getReservations());
+					((MpoliaReservationResult) result).getReservations());
 			args.putInt(
 					ResultListFragment.ARG_RESULT_TYPE, 
 					ResultListFragment.TYPE_RESERVATION);
@@ -127,7 +127,7 @@ public class LukkariActivity extends Activity
 	}
 
 	@Override
-	public void onResultItemSelected(ResultItem item, int itemType) {
+	public void onResultItemSelected(MpoliaResultItem item, int itemType) {
 		Fragment frag = null;
 		Bundle args = new Bundle(1);
 		
@@ -162,7 +162,7 @@ public class LukkariActivity extends Activity
 	
 	@Override
 	public void onResultItemsAdded(
-			final ArrayList<ResultItem> items, int itemType) {
+			final ArrayList<MpoliaResultItem> items, int itemType) {
 			
 		switch( itemType) {
 		
@@ -174,7 +174,7 @@ public class LukkariActivity extends Activity
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						new SqlRealizationAddingTask( true)
-							.execute( items.toArray(new Realization[items.size()]));
+							.execute( items.toArray(new MpoliaRealization[items.size()]));
 					}
 				})
 				.setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -182,7 +182,7 @@ public class LukkariActivity extends Activity
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						new SqlRealizationAddingTask()
-							.execute( items.toArray(new Realization[items.size()]));
+							.execute( items.toArray(new MpoliaRealization[items.size()]));
 					}
 				})
 				.show();
@@ -190,7 +190,7 @@ public class LukkariActivity extends Activity
 			
 		case ResultListFragment.TYPE_RESERVATION :
 			new SqlReservationAddingTask().execute( 
-					items.toArray( new Reservation[ items.size()]));
+					items.toArray( new MpoliaReservation[ items.size()]));
 			break;
 			
 		default:
@@ -259,7 +259,7 @@ public class LukkariActivity extends Activity
 		}
 	}
 
-	private class SqlRealizationAddingTask extends SqlAddingTask<Realization> {
+	private class SqlRealizationAddingTask extends SqlAddingTask<MpoliaRealization> {
 		
 		private final String TAG = SqlRealizationAddingTask.class.getSimpleName();
 		
@@ -274,7 +274,7 @@ public class LukkariActivity extends Activity
 		}
 		
 		@Override
-		protected Boolean doInBackground(Realization... params) {
+		protected Boolean doInBackground(MpoliaRealization... params) {
 			SQLiteOpenHelper helper = new DatabaseHelper(getApplication());
 			SQLiteDatabase db = helper.getWritableDatabase();
 			setWritableDatabase(db);
@@ -302,7 +302,7 @@ public class LukkariActivity extends Activity
 			
 			db.beginTransaction();
 			try {
-				for( Realization relz : params) {
+				for( MpoliaRealization relz : params) {
 					builder = new SQLiteQueryBuilder();
 					builder.setTables(DbSchema.TBL_REALIZATION);
 					cursor = builder.query(db, 
@@ -332,7 +332,7 @@ public class LukkariActivity extends Activity
 								SQLiteDatabase.CONFLICT_FAIL);
 					}
 					
-					for( StudentGroup group : relz.getStudentGroups()) {
+					for( MpoliaStudentGroup group : relz.getStudentGroups()) {
 						groupId = insertStudentGroup(group.getCode());
 						
 						values.clear();
@@ -390,22 +390,22 @@ public class LukkariActivity extends Activity
 		}
 	}
 	
-	private class SqlReservationAddingTask extends SqlAddingTask<Reservation> {
+	private class SqlReservationAddingTask extends SqlAddingTask<MpoliaReservation> {
 		
 		private final String TAG = SqlReservationAddingTask.class.getSimpleName();
 		
 		@Override
-		protected Boolean doInBackground(Reservation... params) {
+		protected Boolean doInBackground(MpoliaReservation... params) {
 			SQLiteOpenHelper helper = new DatabaseHelper(getApplication());
 			SQLiteDatabase db = helper.getWritableDatabase();
 			setWritableDatabase(db);
 			SQLiteQueryBuilder builder = null;
 			ContentValues values = new ContentValues();
 			
-			for( Reservation reservation : params) {	
-				Resource realization = findResource(
+			for( MpoliaReservation reservation : params) {	
+				MpoliaResource realization = findResource(
 						reservation.getResources(), 
-						Resource.TYPE_REALIZATION);
+						MpoliaResource.TYPE_REALIZATION);
 				
 				if( realization.getCode().isEmpty()) {
 					Log.d(TAG, "Tyhjäkoodi");
@@ -461,7 +461,7 @@ public class LukkariActivity extends Activity
 				try {
 					String roomCode = findResource( 
 							reservation.getResources(), 
-							Resource.TYPE_ROOM)
+							MpoliaResource.TYPE_ROOM)
 						.getCode();
 					values.clear();
 					values.put( DbSchema.COL_ID_REALIZATION, relzId);
@@ -495,12 +495,12 @@ public class LukkariActivity extends Activity
 						resId = getIdColumnValue( cursor, 0);
 					}
 					
-					ArrayList<Resource> studentGroups = findAllResources(
+					ArrayList<MpoliaResource> studentGroups = findAllResources(
 							reservation.getResources(), 
-							Resource.TYPE_STUDENT_GROUP);
+							MpoliaResource.TYPE_STUDENT_GROUP);
 					
 					long groupId;
-					for(Resource group : studentGroups) {
+					for(MpoliaResource group : studentGroups) {
 						String groupCode = group.getName();
 						
 						groupId = insertStudentGroup(groupCode);
@@ -558,9 +558,9 @@ public class LukkariActivity extends Activity
 			}
 		}
 		
-		private Resource findResource( 
-				Collection<Resource> resources, String resourceType) {
-			for( Resource resource : resources) {
+		private MpoliaResource findResource( 
+				Collection<MpoliaResource> resources, String resourceType) {
+			for( MpoliaResource resource : resources) {
 				if( resource.getType().equals( resourceType)) {
 					return resource;
 				}
@@ -568,11 +568,11 @@ public class LukkariActivity extends Activity
 			return null;
 		}
 		
-		private ArrayList<Resource> findAllResources( 
-				Collection<Resource> resources, String resourceType) {
-			ArrayList<Resource> subList = new ArrayList<Resource>( resources.size() / 2);
+		private ArrayList<MpoliaResource> findAllResources( 
+				Collection<MpoliaResource> resources, String resourceType) {
+			ArrayList<MpoliaResource> subList = new ArrayList<MpoliaResource>( resources.size() / 2);
 		
-			for( Resource resource : resources) {
+			for( MpoliaResource resource : resources) {
 				if( resource.getType().equals( resourceType)) {
 					subList.add( resource);
 				}

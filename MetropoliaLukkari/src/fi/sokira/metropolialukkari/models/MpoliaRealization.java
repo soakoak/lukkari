@@ -9,22 +9,22 @@ import java.util.List;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class Realization extends ResultItem {
+public class MpoliaRealization extends MpoliaResultItem {
 
 	private String code;
 	private String name;
-	private List<StudentGroup> studentGroups;
+	private List<MpoliaStudentGroup> studentGroups;
 	private Date startDate;
 	private Date endDate;
 	
-	public Realization() {
+	public MpoliaRealization() {
 	}
 	
-	public Realization( Parcel in) {
+	public MpoliaRealization( Parcel in) {
 		this.code = in.readString();
 		this.name = in.readString();
-		this.studentGroups = new ArrayList<StudentGroup>();
-		in.readTypedList( studentGroups, StudentGroup.CREATOR);
+		this.studentGroups = new ArrayList<MpoliaStudentGroup>();
+		in.readTypedList( studentGroups, MpoliaStudentGroup.CREATOR);
 		DateFormat sdf = DateFormat.getDateTimeInstance();
 		try {
 			this.startDate = sdf.parse( in.readString());
@@ -51,11 +51,11 @@ public class Realization extends ResultItem {
 		this.name = name;
 	}
 
-	public List<StudentGroup> getStudentGroups() {
+	public List<MpoliaStudentGroup> getStudentGroups() {
 		return studentGroups;
 	}
 
-	public void setStudentGroups(List<StudentGroup> studentGroups) {
+	public void setStudentGroups(List<MpoliaStudentGroup> studentGroups) {
 		this.studentGroups = studentGroups;
 	}
 
@@ -89,17 +89,17 @@ public class Realization extends ResultItem {
 		dest.writeString( endDate.toString());
 	}
 	
-	public static final Parcelable.Creator<Realization> CREATOR 
-			= new Creator<Realization>() {
+	public static final Parcelable.Creator<MpoliaRealization> CREATOR 
+			= new Creator<MpoliaRealization>() {
 		
 		@Override
-		public Realization[] newArray(int size) {
-			return new Realization [size];
+		public MpoliaRealization[] newArray(int size) {
+			return new MpoliaRealization [size];
 		}
 		
 		@Override
-		public Realization createFromParcel(Parcel source) {
-			return new Realization( source);
+		public MpoliaRealization createFromParcel(Parcel source) {
+			return new MpoliaRealization( source);
 		}
 	};
 }

@@ -26,11 +26,11 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
-import fi.sokira.metropolialukkari.models.RealizationQuery;
-import fi.sokira.metropolialukkari.models.RealizationResult;
-import fi.sokira.metropolialukkari.models.ReservationQuery;
-import fi.sokira.metropolialukkari.models.ReservationResult;
-import fi.sokira.metropolialukkari.models.Result;
+import fi.sokira.metropolialukkari.models.MpoliaRealizationQuery;
+import fi.sokira.metropolialukkari.models.MpoliaRealizationResult;
+import fi.sokira.metropolialukkari.models.MpoliaReservationQuery;
+import fi.sokira.metropolialukkari.models.MpoliaReservationResult;
+import fi.sokira.metropolialukkari.models.MpoliaResult;
 
 public class HakuFragment extends Fragment 
 						implements OnClickListener,
@@ -138,12 +138,12 @@ public class HakuFragment extends Fragment
 				Date startDate = parseDateFromString( input);
 				
 				if( queryType == QUERY_REALIZATION) {
-					RealizationQuery query = new RealizationQuery()
+					MpoliaRealizationQuery query = new MpoliaRealizationQuery()
 						.setStudentGroups( studentGroups)
 						.setStartDate( startDate);
 					new RealizationWebTask().execute(query);
 				} else if (queryType == QUERY_RESERVATION) {
-					ReservationQuery query = new ReservationQuery()
+					MpoliaReservationQuery query = new MpoliaReservationQuery()
 						.setStudentGroup( studentGroups)
 						.setStartDate( startDate)
 						.setSubject( subjectInput.getText().toString());
@@ -236,17 +236,17 @@ public class HakuFragment extends Fragment
 		
 		public void onSearchInitiated();
 		
-		public void onSearchFinished( Result<?> result, int resultType);
+		public void onSearchFinished( MpoliaResult<?> result, int resultType);
 	}
 	
 	private class ReservationWebTask 
-			extends WebQueryTask<ReservationQuery, ReservationResult> {
+			extends WebQueryTask<MpoliaReservationQuery, MpoliaReservationResult> {
 
 		private static final String reservationServiceUrl = 
 				"https://opendata.metropolia.fi/r1/reservation";
 		
 		public ReservationWebTask() {
-			super(ReservationResult.class);
+			super(MpoliaReservationResult.class);
 		}
 
 		@Override
@@ -255,19 +255,19 @@ public class HakuFragment extends Fragment
 		}
 
 		@Override
-		protected void onPostExecute(ReservationResult result) {
+		protected void onPostExecute(MpoliaReservationResult result) {
 			listener.onSearchFinished( result, OnSearchListener.RESULT_RESERVATION);
 		}
 	};
 	
 	private class RealizationWebTask 
-			extends WebQueryTask<RealizationQuery, RealizationResult> {
+			extends WebQueryTask<MpoliaRealizationQuery, MpoliaRealizationResult> {
 
 		private static final String realizationServiceUrl = 
 				"https://opendata.metropolia.fi/r1/realization";
 		
 		public RealizationWebTask() {
-			super(RealizationResult.class);
+			super(MpoliaRealizationResult.class);
 		}
 
 		@Override
@@ -276,7 +276,7 @@ public class HakuFragment extends Fragment
 		}
 
 		@Override
-		protected void onPostExecute(RealizationResult result) {
+		protected void onPostExecute(MpoliaRealizationResult result) {
 			listener.onSearchFinished( result, OnSearchListener.RESULT_REALIZATION);
 		}
 		

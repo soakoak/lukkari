@@ -10,8 +10,8 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import fi.sokira.metropolialukkari.models.Reservation;
-import fi.sokira.metropolialukkari.models.Resource;
+import fi.sokira.metropolialukkari.models.MpoliaReservation;
+import fi.sokira.metropolialukkari.models.MpoliaResource;
 
 public class ReservationDetailFragment extends Fragment {
 	
@@ -25,7 +25,7 @@ public class ReservationDetailFragment extends Fragment {
 		
 		Bundle args = getArguments();
 		
-		Reservation reservation = (Reservation)args.getParcelable(ARG_RESERVATION);
+		MpoliaReservation reservation = (MpoliaReservation)args.getParcelable(ARG_RESERVATION);
 		
 		if( reservation != null) {
 			TextView text;
@@ -44,8 +44,8 @@ public class ReservationDetailFragment extends Fragment {
 			
 			ListView lv = (ListView) v.findViewById( R.id.list);
 
-			ArrayAdapter<Resource> adapter = 
-					new ArrayAdapter<Resource>(
+			ArrayAdapter<MpoliaResource> adapter = 
+					new ArrayAdapter<MpoliaResource>(
 						getActivity(), 
 						R.layout.dialog_resource_details, 
 						reservation.getResources()) 
@@ -55,7 +55,7 @@ public class ReservationDetailFragment extends Fragment {
 					View subView = inflater.inflate( 
 							R.layout.dialog_resource_details, null);
 					
-					Resource resource = getItem( position);
+					MpoliaResource resource = getItem( position);
 					TextView text;
 					
 					text = (TextView) subView.findViewById( R.id.type);

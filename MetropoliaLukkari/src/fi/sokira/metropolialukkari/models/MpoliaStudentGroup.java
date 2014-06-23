@@ -3,14 +3,14 @@ package fi.sokira.metropolialukkari.models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class StudentGroup implements Parcelable {
+public class MpoliaStudentGroup implements Parcelable {
 	
 	private String code;
 	
-	public StudentGroup() {
+	public MpoliaStudentGroup() {
 	}
 	
-	public StudentGroup( Parcel source) {
+	public MpoliaStudentGroup( Parcel source) {
 		this.code = source.readString();
 	}
 
@@ -32,17 +32,17 @@ public class StudentGroup implements Parcelable {
 		dest.writeString( code);
 	}
 	
-	public static final Parcelable.Creator<StudentGroup> CREATOR 
-			= new Creator<StudentGroup>() {
+	public static final Parcelable.Creator<MpoliaStudentGroup> CREATOR 
+			= new Creator<MpoliaStudentGroup>() {
 	
 		@Override
-		public StudentGroup[] newArray(int size) {
-			return new StudentGroup[size];
+		public MpoliaStudentGroup[] newArray(int size) {
+			return new MpoliaStudentGroup[size];
 		}
 		
 		@Override
-		public StudentGroup createFromParcel(Parcel source) {
-			return new StudentGroup(source);
+		public MpoliaStudentGroup createFromParcel(Parcel source) {
+			return new MpoliaStudentGroup(source);
 		}
 	};
 }

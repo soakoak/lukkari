@@ -3,7 +3,7 @@ package fi.sokira.metropolialukkari.models;
 import java.util.Date;
 import java.util.List;
 
-public class RealizationQuery implements MetropoliaQuery {
+public class MpoliaRealizationQuery implements MpoliaQuery {
 	
 	private String name;
 	private List<String> codes;
@@ -11,14 +11,14 @@ public class RealizationQuery implements MetropoliaQuery {
 	private Date endDate;
 	private List<String> studentGroups;
 	
-	public RealizationQuery() {
+	public MpoliaRealizationQuery() {
 	}
 
 	public String getName() {
 		return name;
 	}
 
-	public RealizationQuery setName(String name) {
+	public MpoliaRealizationQuery setName(String name) {
 		this.name = name;
 		return this;
 	}
@@ -27,7 +27,7 @@ public class RealizationQuery implements MetropoliaQuery {
 		return codes;
 	}
 
-	public RealizationQuery setCodes(List<String> codes) {
+	public MpoliaRealizationQuery setCodes(List<String> codes) {
 		this.codes = codes;
 		return this;
 	}
@@ -36,7 +36,7 @@ public class RealizationQuery implements MetropoliaQuery {
 		return startDate;
 	}
 
-	public RealizationQuery setStartDate(Date startDate) {
+	public MpoliaRealizationQuery setStartDate(Date startDate) {
 		this.startDate = startDate;
 		return this;
 	}
@@ -45,7 +45,7 @@ public class RealizationQuery implements MetropoliaQuery {
 		return endDate;
 	}
 
-	public RealizationQuery setEndDate(Date endDate) {
+	public MpoliaRealizationQuery setEndDate(Date endDate) {
 		this.endDate = endDate;
 		return this;
 	}
@@ -54,7 +54,7 @@ public class RealizationQuery implements MetropoliaQuery {
 		return studentGroups;
 	}
 
-	public RealizationQuery setStudentGroups(List<String> studentGroups) {
+	public MpoliaRealizationQuery setStudentGroups(List<String> studentGroups) {
 		this.studentGroups = studentGroups;
 		return this;
 	}
