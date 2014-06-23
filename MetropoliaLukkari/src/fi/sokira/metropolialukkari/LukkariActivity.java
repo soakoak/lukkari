@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
@@ -13,6 +15,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcel;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -88,7 +91,7 @@ public class LukkariActivity extends Activity
 	}
 	
 	@Override
-	public void onSearchFinished(Result result, int resultType) {
+	public void onSearchFinished(Result<?> result, int resultType) {
 		ResultListFragment frag = new ResultListFragment();
 		
 		Bundle args = new Bundle(2);
@@ -158,13 +161,31 @@ public class LukkariActivity extends Activity
 	}
 	
 	@Override
-	public void onResultItemsAdded(ArrayList<ResultItem> items, int itemType) {
+	public void onResultItemsAdded(
+			final ArrayList<ResultItem> items, int itemType) {
 			
 		switch( itemType) {
 		
 		case ResultListFragment.TYPE_REALIZATION :
-			new SqlRealizationAddingTask().execute( 
-					items.toArray( new Realization[ items.size()]));
+			new AlertDialog.Builder( this)
+				.setMessage(R.string.dialog_add_related_reservations)
+				.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+					
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						new SqlRealizationAddingTask( true)
+							.execute( items.toArray(new Realization[items.size()]));
+					}
+				})
+				.setNegativeButton("No", new DialogInterface.OnClickListener() {
+					
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						new SqlRealizationAddingTask()
+							.execute( items.toArray(new Realization[items.size()]));
+					}
+				})
+				.show();
 			break;
 			
 		case ResultListFragment.TYPE_RESERVATION :
@@ -242,6 +263,16 @@ public class LukkariActivity extends Activity
 		
 		private final String TAG = SqlRealizationAddingTask.class.getSimpleName();
 		
+		private boolean mAddRelevantReservations; //TODO tuki
+		
+		public SqlRealizationAddingTask() {
+			this(false);
+		}
+		
+		public SqlRealizationAddingTask(boolean addRelevantReservations) {
+			mAddRelevantReservations = addRelevantReservations;
+		}
+		
 		@Override
 		protected Boolean doInBackground(Realization... params) {
 			SQLiteOpenHelper helper = new DatabaseHelper(getApplication());
@@ -251,7 +282,7 @@ public class LukkariActivity extends Activity
 			
 			ContentValues values = new ContentValues();
 			long relzId, groupId, lukId;
-			
+
 			Cursor cursor = getLukkariByName(TEST_LUKKARI_NAME);
 			if( cursor.getCount() > 0) {
 				cursor.moveToFirst();
@@ -264,7 +295,7 @@ public class LukkariActivity extends Activity
 			}
 			
 			
-			Log.d(TAG, "Tulosten m‰‰r‰: " + cursor.getCount());
+			Log.d(TAG, "Tulosten m√§√§r√§ " + cursor.getCount());
 			Log.d(TAG, "Lukkarin " + TEST_LUKKARI_NAME + " indeksi: " + lukId);
 			
 			String relzWhere = DbSchema.COL_CODE + " = ?";
@@ -340,7 +371,7 @@ public class LukkariActivity extends Activity
 					DbSchema.COL_CODE + " ASC");
 			cursor.moveToFirst();
 
-			Log.d(TAG, "Toteutusten m‰‰r‰: " + cursor.getCount());
+			Log.d(TAG, "Toteutusten m√§√§r√§ " + cursor.getCount());
 			
 			return true;
 		}
@@ -349,11 +380,11 @@ public class LukkariActivity extends Activity
 		protected void onPostExecute(Boolean result) {
 			if( result) {
 				Toast.makeText( getApplication(), 
-						"Toteutukset lis‰tty onnistuneeti.", 
+						"Toteutukset lis√§tty onnistuneeti.", 
 						Toast.LENGTH_LONG).show();
 			} else {
 				Toast.makeText( getApplication(), 
-						"Virhe lis‰tess‰ toteutuksia.", 
+						"Virhe lis√§tess√§toteutuksia.", 
 						Toast.LENGTH_LONG).show();
 			}
 		}
@@ -377,7 +408,7 @@ public class LukkariActivity extends Activity
 						Resource.TYPE_REALIZATION);
 				
 				if( realization.getCode().isEmpty()) {
-					Log.d(TAG, "Tyhj‰ koodi");
+					Log.d(TAG, "Tyhj√§koodi");
 					continue;
 				}
 				
@@ -509,7 +540,7 @@ public class LukkariActivity extends Activity
 					null);
 			cursor.moveToFirst();
 
-			Log.d(TAG, "Varausten m‰‰r‰: " + cursor.getCount());
+			Log.d(TAG, "Varausten m√§√§r√§ " + cursor.getCount());
 			
 			return true;
 		}
@@ -518,11 +549,11 @@ public class LukkariActivity extends Activity
 		protected void onPostExecute(Boolean result) {
 			if( result) {
 				Toast.makeText( getApplication(), 
-						"Varaukset lis‰tty onnistuneeti.", 
+						"Varaukset lis√§tty onnistuneeti.", 
 						Toast.LENGTH_LONG).show();
 			} else {
 				Toast.makeText( getApplication(), 
-						"Virhe lis‰tess‰ varauksia.", 
+						"Virhe lis√§tess√§varauksia.", 
 						Toast.LENGTH_LONG).show();
 			}
 		}

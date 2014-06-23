@@ -18,5 +18,6 @@
     <string name="subject">Aihe</string>
     <string name="resouce_type">Resurssityyppi</string>
     <string name="add">Add</string>
+    <string name="dialog_add_related_reservations">Would you like to add all reservations related to the realization?</string>
 
 </resources>
