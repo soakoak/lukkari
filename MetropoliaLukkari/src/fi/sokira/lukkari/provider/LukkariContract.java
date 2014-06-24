@@ -18,11 +18,13 @@ public final class LukkariContract {
 	}
 	
 	public static final class Lukkari implements BaseColumns, LukkariColumns {
-		
+	   
+	   protected static final String PATH = DbSchema.TBL_LUKKARI;
+	   
 		public static final Uri CONTENT_URI = Uri.withAppendedPath(
-				AUTHORITY_URI, DbSchema.TBL_LUKKARI);
+				AUTHORITY_URI, PATH);
 		
-		private static final String MIME_END = SOKIRA_BASE_TYPE + DbSchema.TBL_LUKKARI;
+		private static final String MIME_END = SOKIRA_BASE_TYPE + PATH;
 		
 		public static final String CONTENT_TYPE = 
 				ContentResolver.CURSOR_DIR_BASE_TYPE
@@ -34,18 +36,20 @@ public final class LukkariContract {
 	}
 	
 	protected interface LukkariColumns {
-		public static final String LUKKARI_NAME = DbSchema.COL_NAME;
+		public static final String NAME = DbSchema.COL_NAME;
 	}
 
 	
 	public static final class Realization implements BaseColumns, 
 		RealizationColumns, DateColumns {
 		
+	   protected static final String PATH = DbSchema.TBL_REALIZATION;
+	   
 		public static final Uri CONTENT_URI = Uri.withAppendedPath(
-				LukkariContract.AUTHORITY_URI, DbSchema.TBL_REALIZATION);
+				LukkariContract.AUTHORITY_URI, PATH);
 		
 		private static final String MIME_END = SOKIRA_BASE_TYPE
-				+ DbSchema.TBL_REALIZATION;
+				+ PATH;
 		
 		public static final String CONTENT_TYPE = 
 				ContentResolver.CURSOR_DIR_BASE_TYPE
@@ -56,25 +60,27 @@ public final class LukkariContract {
 				+ MIME_END;
 		
 		public static final String[] PROJECTION_ALL = {
-				_ID, REALIZATION_CODE, REALIZATION_NAME, START_DATE, END_DATE
+				_ID, CODE, NAME, START_DATE, END_DATE
 		};
 		
-		public static final String SORT_ORDER_DEFAULT = REALIZATION_NAME + "ASC";
+		public static final String SORT_ORDER_DEFAULT = NAME + "ASC";
 	}
 	
 	protected interface RealizationColumns {
-		public static final String REALIZATION_CODE = DbSchema.COL_CODE;
+		public static final String CODE = DbSchema.COL_CODE;
 		
-		public static final String REALIZATION_NAME = DbSchema.COL_NAME;
+		public static final String NAME = DbSchema.COL_NAME;
 	}
 	
 	public final static class Reservation implements BaseColumns, 
 		ReservationColumns, DateColumns {
 		
+	   protected static final String PATH = DbSchema.TBL_RESERVATION;
+	   
 		public static final Uri CONTENT_URI = Uri.withAppendedPath(
-				AUTHORITY_URI, DbSchema.TBL_RESERVATION);
+				AUTHORITY_URI, PATH);
 		
-		private static final String MIME_END = SOKIRA_BASE_TYPE + DbSchema.TBL_RESERVATION;
+		private static final String MIME_END = SOKIRA_BASE_TYPE + PATH;
 		
 		public static final String CONTENT_TYPE = 
 				ContentResolver.CURSOR_DIR_BASE_TYPE
@@ -88,15 +94,17 @@ public final class LukkariContract {
 	protected interface ReservationColumns {
 		public static final String REALIZATION_ID = DbSchema.COL_ID_REALIZATION;
 		
-		public static final String RESERVATION_ROOM = DbSchema.COL_ROOM;
+		public static final String ROOM = DbSchema.COL_ROOM;
 	}
 	
 	public final static class StudentGroup implements BaseColumns, StudentGroupColumns {
 		
+	   protected static final String PATH = DbSchema.TBL_STUDENT_GROUP;
+	   
 		public static final Uri CONTENT_URI = Uri.withAppendedPath(
-				AUTHORITY_URI, DbSchema.TBL_STUDENT_GROUP);
+				AUTHORITY_URI, PATH);
 		
-		private static final String MIME_END = SOKIRA_BASE_TYPE + DbSchema.TBL_STUDENT_GROUP;
+		private static final String MIME_END = SOKIRA_BASE_TYPE + PATH;
 		
 		public static final String CONTENT_TYPE = 
 				ContentResolver.CURSOR_DIR_BASE_TYPE
@@ -108,6 +116,6 @@ public final class LukkariContract {
 	}
 	
 	protected interface StudentGroupColumns {
-		public static final String GROUP_CODE = DbSchema.COL_CODE;
+		public static final String CODE = DbSchema.COL_CODE;
 	}
 }

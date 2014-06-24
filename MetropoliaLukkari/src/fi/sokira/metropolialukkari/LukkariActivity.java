@@ -15,13 +15,13 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcel;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 import fi.sokira.lukkari.provider.DatabaseHelper;
 import fi.sokira.lukkari.provider.DbSchema;
+import fi.sokira.lukkari.provider.LukkariContract;
 import fi.sokira.lukkari.provider.LukkariContract.Lukkari;
 import fi.sokira.metropolialukkari.HakuFragment.OnSearchListener;
 import fi.sokira.metropolialukkari.models.MpoliaRealization;
@@ -214,12 +214,12 @@ public class LukkariActivity extends Activity
 			builder.appendWhere( 
 					DbSchema.COL_NAME + " = '" + lukkariName + "'");
 			return builder.query(mDatabase, 
-					new String[]{ Lukkari._ID,  Lukkari.LUKKARI_NAME}, 
+					new String[]{ Lukkari._ID,  Lukkari.NAME}, 
 					null,
 					null, 
 					null, 
 					null,
-					Lukkari.LUKKARI_NAME + " ASC");
+					Lukkari.NAME + " ASC");
 		}
 		
 		protected int getIdColumnValue( Cursor cursor, int idx) {
@@ -408,7 +408,7 @@ public class LukkariActivity extends Activity
 						MpoliaResource.TYPE_REALIZATION);
 				
 				if( realization.getCode().isEmpty()) {
-					Log.d(TAG, "Tyhjäkoodi");
+					Log.d(TAG, "Tyhjä koodi, ei käsitellä.");
 					continue;
 				}
 				
@@ -417,10 +417,10 @@ public class LukkariActivity extends Activity
 				builder.appendWhere(
 						DbSchema.COL_CODE + " = '" + 
 						realization.getCode() + "'");
-				Cursor cursor = builder.query(db, 
-						new String[]{ DbSchema.COL_ID, DbSchema.COL_CODE }, 
+				Cursor cursor = builder.query(db,
+						new String[]{ DbSchema.COL_ID, LukkariContract.Realization.CODE }, 
 						null,
-						null, 
+						null,
 						null, 
 						null,
 						DbSchema.COL_CODE + " ASC");
