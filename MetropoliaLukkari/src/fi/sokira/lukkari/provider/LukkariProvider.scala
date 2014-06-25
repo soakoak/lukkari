@@ -9,13 +9,18 @@ import fi.sokira.lukkari.{provider => lprovider}
 import lprovider.LukkariContract._
 import android.database.SQLException
 import android.util.Log
+import android.content.ContentUris
+import android.database.sqlite.SQLiteQueryBuilder
 
 class LukkariProvider extends ContentProvider {
    import LukkariProvider._
    import CUri._
    
    private[this] val mHelper = new DatabaseHelper(getContext())
+   private[this] val Tag = "LukkariProvider"
+   
    private[this] def writeableDb = mHelper.getWritableDatabase()
+   private[this] def readableDb = mHelper.getReadableDatabase()
    
    override def onCreate(): Boolean = true
    
@@ -33,26 +38,68 @@ class LukkariProvider extends ContentProvider {
    override def insert(uri: Uri, values: ContentValues) : Uri = {
       CUri( matchUri(uri)) match {
          case CUri.StudentGroupList =>
-            try {
-               writeableDb.insertOrThrow(StudentGroup.PATH, null, values)
-            } catch {
-               case ex: SQLException =>
-                  Log.d("", "There was an existing record.")
-//                  query(uri, Array(StudentGroup.CODE))
-            } 
+            def insertStudentGroup : Long = {
+               StudentGroupDao.insert(writeableDb, values)
+            }
             
-            null
+            getUriForId(insertStudentGroup, uri)
          case _ => throw new IllegalArgumentException(
                   "Unsupported URI for insertion: " + uri)
       }
    }
-   
+
    override def query(uri: Uri, projection: Array[String],
          selection: String, selectionArgs: Array[String], 
-         sortOrder: String): Cursor = null
+         sortOrder: String): Cursor = {
+      
+      def doQuery: Cursor = {
+         
+         def doSimpleQuery(dao: AnyRef with SQLiteQuery): Cursor =
+            doQueryWithSelection(selection, selectionArgs)(dao)
+         
+         def doQueryWithSelection(selection: String, 
+               selectionArgs: Array[String])(dao: AnyRef with SQLiteQuery): Cursor = 
+            dao.query(readableDb, projection, selection, selectionArgs, sortOrder)
+         
+         import CUri._
+         CUri( matchUri(uri)) match {
+            
+            case RealizationId =>
+               val selection = 
+                  Realization.Columns.ID + " = " + uri.getLastPathSegment()
+               doQueryWithSelection(selection, selectionArgs)(RealizationDao)
+            case RealizationList =>
+               doSimpleQuery(RealizationDao)
+               
+            case StudentGroupId =>
+               val selection = 
+                  StudentGroup.Columns.ID + " = " + uri.getLastPathSegment() 
+               doQueryWithSelection(selection, selectionArgs)(StudentGroupDao) 
+            case StudentGroupList =>
+               doSimpleQuery(StudentGroupDao)
+               
+            case _ => throw new IllegalArgumentException(
+                  "Unsupported URI: " + uri)
+         }
+      }
+      
+      val cursor = doQuery
+      cursor.setNotificationUri(getContext().getContentResolver(), uri)
+      cursor
+   }
    
    override def update(uri: Uri, values: ContentValues, selection: String,
          selectionArgs: Array[String]) : Int = -1
+         
+   def getUriForId(id: Long, uri: Uri): Uri = {
+      id match {
+         case -1 => throw new SQLException("Problem while inserting uri: " + uri)
+         case _ =>
+            val itemUri = ContentUris.withAppendedId(uri, id)
+            getContext().getContentResolver().notifyChange(itemUri, null)
+            itemUri
+      }
+   }
 }
 
 object LukkariProvider {

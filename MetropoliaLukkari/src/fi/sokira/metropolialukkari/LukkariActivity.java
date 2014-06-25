@@ -6,6 +6,7 @@ import java.util.Collection;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.database.Cursor;
@@ -13,6 +14,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,6 +25,7 @@ import fi.sokira.lukkari.provider.DatabaseHelper;
 import fi.sokira.lukkari.provider.DbSchema;
 import fi.sokira.lukkari.provider.LukkariContract;
 import fi.sokira.lukkari.provider.LukkariContract.Lukkari;
+import fi.sokira.lukkari.provider.LukkariContract.Realization;
 import fi.sokira.metropolialukkari.HakuFragment.OnSearchListener;
 import fi.sokira.metropolialukkari.models.MpoliaRealization;
 import fi.sokira.metropolialukkari.models.MpoliaRealizationResult;
@@ -214,12 +217,12 @@ public class LukkariActivity extends Activity
 			builder.appendWhere( 
 					DbSchema.COL_NAME + " = '" + lukkariName + "'");
 			return builder.query(mDatabase, 
-					new String[]{ Lukkari._ID,  Lukkari.NAME}, 
+					new String[]{ Lukkari.Columns.ID,  Lukkari.Columns.NAME}, 
 					null,
 					null, 
 					null, 
 					null,
-					Lukkari.NAME + " ASC");
+					Lukkari.Columns.NAME + " ASC");
 		}
 		
 		protected int getIdColumnValue( Cursor cursor, int idx) {
@@ -229,33 +232,11 @@ public class LukkariActivity extends Activity
 		
 		protected long insertStudentGroup(String groupCode) {
 			ContentValues values = new ContentValues();
-			values.put( DbSchema.COL_CODE, groupCode);
+			values.put( LukkariContract.StudentGroup.Columns.CODE, groupCode);
 			
-			long groupId;
-			try{
-				groupId = mDatabase.insertOrThrow( DbSchema.TBL_STUDENT_GROUP, 
-					null, values);
-			} catch( SQLException e) {
-				Log.d(TAG, 
-					groupCode + ": there was an existing record.");
-				
-				SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
-				builder.setTables( DbSchema.TBL_STUDENT_GROUP);
-				Cursor cursor = builder.query(mDatabase,
-					new String[]{ DbSchema.COL_ID }, 
-					DbSchema.COL_CODE + " = ?", 
-					new String[]{ 
-						groupCode
-					}, 
-					null,
-					null, 
-					null);
-				
-				groupId = getIdColumnValue( cursor, 0);
-				cursor.close();
-			} 
-			
-			return groupId;
+			Uri uri = getContentResolver().insert(
+			      LukkariContract.StudentGroup.CONTENT_URI, values);
+			return ContentUris.parseId(uri);
 		}
 	}
 
@@ -407,7 +388,7 @@ public class LukkariActivity extends Activity
 						reservation.getResources(), 
 						MpoliaResource.TYPE_REALIZATION);
 				
-				if( realization.getCode().isEmpty()) {
+				if( realization == null || realization.getCode().isEmpty()) {
 					Log.d(TAG, "Tyhjä koodi, ei käsitellä.");
 					continue;
 				}
@@ -418,7 +399,7 @@ public class LukkariActivity extends Activity
 						DbSchema.COL_CODE + " = '" + 
 						realization.getCode() + "'");
 				Cursor cursor = builder.query(db,
-						new String[]{ DbSchema.COL_ID, LukkariContract.Realization.CODE }, 
+						new String[]{ DbSchema.COL_ID, Realization.Columns.CODE }, 
 						null,
 						null,
 						null, 
