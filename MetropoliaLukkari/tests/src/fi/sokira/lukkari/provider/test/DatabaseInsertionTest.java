@@ -1,6 +1,7 @@
 package fi.sokira.lukkari.provider.test;
 
 import static fi.sokira.lukkari.provider.DatabaseHelper.clearDatabase;
+import static fi.sokira.lukkari.provider.test.TestUtils.assertCursorColumn;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -245,24 +246,24 @@ public class DatabaseInsertionTest extends AndroidTestCase {
 		assertCursorColumn(studentGrpId, cursor, DbSchema.COL_ID_STUDENT_GROUP);
 	}
 	
-	public void testStudentGroupInsertion() {
-		mValues.put( DbSchema.COL_CODE, TEST_STUDENT_GROUP_CODE);
-		long insertId = mDatabase.insert( 
-				DbSchema.TBL_STUDENT_GROUP, null, mValues);
-		
-		String[] allColumns = new String[]{ 
-				DbSchema.COL_ID, 
-				DbSchema.COL_CODE};
-		
-		Cursor cursor = doQuery(DbSchema.TBL_STUDENT_GROUP, allColumns);
-		cursor.moveToFirst();
-		
-		int expectedEntries = 1;
-		assertEquals( expectedEntries, cursor.getCount());
-		
-		assertCursorColumn( insertId, cursor, DbSchema.COL_ID);
-		assertCursorColumn( TEST_STUDENT_GROUP_CODE, cursor, DbSchema.COL_CODE);
-	}
+   public void testStudentGroupInsertion() {
+      mValues.put( DbSchema.COL_CODE, TEST_STUDENT_GROUP_CODE);
+      long insertId = mDatabase.insert( 
+            DbSchema.TBL_STUDENT_GROUP, null, mValues);
+      
+      String[] allColumns = new String[]{ 
+            DbSchema.COL_ID, 
+            DbSchema.COL_CODE};
+      
+      Cursor cursor = doQuery(DbSchema.TBL_STUDENT_GROUP, allColumns);
+      cursor.moveToFirst();
+      
+      int expectedEntries = 1;
+      assertEquals( expectedEntries, cursor.getCount());
+      
+      assertCursorColumn( insertId, cursor, DbSchema.COL_ID);
+      assertCursorColumn( TEST_STUDENT_GROUP_CODE, cursor, DbSchema.COL_CODE);
+   }
 	
 	private Date makeDate( int year, int month, int day) {
 		return makeDate( year, month, day, 0, 0);
@@ -275,19 +276,7 @@ public class DatabaseInsertionTest extends AndroidTestCase {
 		return cal.getTime();
 	}
 	
-	protected static void assertCursorColumn(
-			String expected, Cursor cursor, String columnName) {
-		
-		int idx = cursor.getColumnIndex( columnName);	
-		assertEquals( expected, cursor.getString( idx));
-	}
-	
-	protected static void assertCursorColumn(
-			long expected, Cursor cursor, String columnName) {
-		
-		int idx = cursor.getColumnIndex( columnName);	
-		assertEquals( expected, cursor.getLong( idx));
-	}
+
 	
 	private Cursor doQuery(String inTables, String[] projection) {
 		return doQuery(inTables, projection, null);
