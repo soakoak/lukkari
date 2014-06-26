@@ -29,6 +29,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <provider 
+            android:label="LukkariProvider" 
+            android:name="fi.sokira.lukkari.provider.LukkariProvider"
+            android:authorities="fi.sokira.lukkari.provider" 
+            android:exported="false">
+        </provider>
     </application>
 
 </manifest>

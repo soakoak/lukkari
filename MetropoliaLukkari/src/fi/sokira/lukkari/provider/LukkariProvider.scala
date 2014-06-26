@@ -11,14 +11,13 @@ import android.database.SQLException
 import android.util.Log
 import android.content.ContentUris
 import android.database.sqlite.SQLiteQueryBuilder
+import LukkariProvider.{CUri, matchUri}
 
 class LukkariProvider extends ContentProvider {
-   import LukkariProvider._
-   import CUri._
    
-   private[this] val mHelper = new DatabaseHelper(getContext())
    private[this] val Tag = "LukkariProvider"
-   
+
+   private[this] def mHelper = new DatabaseHelper(getContext())
    private[this] def writeableDb = mHelper.getWritableDatabase()
    private[this] def readableDb = mHelper.getReadableDatabase()
    
@@ -49,7 +48,7 @@ class LukkariProvider extends ContentProvider {
    }
 
    override def query(uri: Uri, projection: Array[String],
-         selection: String, selectionArgs: Array[String], 
+         selection: String, selectionArgs: Array[String],
          sortOrder: String): Cursor = {
       
       def doQuery: Cursor = {
@@ -137,5 +136,5 @@ object LukkariProvider {
       uriMatcher
    }
    
-    def matchUri(uri: Uri) = uriMatcher.`match`(uri)
+   def matchUri(uri: Uri) = uriMatcher.`match`(uri)
 }

@@ -4,7 +4,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.Cursor
 import android.database.sqlite.SQLiteQueryBuilder
 
-trait SQLiteQuery {
+trait SQLiteQuery extends BaseDao {
 
    val tableName: String
    

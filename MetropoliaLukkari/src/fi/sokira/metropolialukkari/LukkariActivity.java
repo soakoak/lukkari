@@ -6,6 +6,7 @@ import java.util.Collection;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.DialogInterface;
@@ -225,9 +226,26 @@ public class LukkariActivity extends Activity
 					Lukkari.Columns.NAME + " ASC");
 		}
 		
-		protected int getIdColumnValue( Cursor cursor, int idx) {
+		protected long getDefaultLukkariId() {
+		   long lukId;
+		   ContentValues values = new ContentValues();
+		   
+		   Cursor cursor = getLukkariByName(TEST_LUKKARI_NAME);
+         if( cursor.getCount() > 0) {
+            cursor.moveToFirst();
+            lukId = cursor.getLong( cursor.getColumnIndex( DbSchema.COL_ID));
+         } else {
+            values.clear();
+            values.put( DbSchema.COL_NAME, TEST_LUKKARI_NAME);
+            lukId = mDatabase.insertOrThrow( 
+                  DbSchema.TBL_LUKKARI, null, values);
+         }
+		   return lukId;
+		}
+		
+		protected long getIdColumnValue( Cursor cursor, int idx) {
 			cursor.moveToPosition( idx);
-			return cursor.getInt( cursor.getColumnIndex( DbSchema.COL_ID));
+			return cursor.getLong( cursor.getColumnIndex( DbSchema.COL_ID));
 		}
 		
 		protected long insertStudentGroup(String groupCode) {
@@ -263,21 +281,13 @@ public class LukkariActivity extends Activity
 			
 			ContentValues values = new ContentValues();
 			long relzId, groupId, lukId;
-
-			Cursor cursor = getLukkariByName(TEST_LUKKARI_NAME);
-			if( cursor.getCount() > 0) {
-				cursor.moveToFirst();
-				lukId = cursor.getInt( cursor.getColumnIndex( DbSchema.COL_ID));
-			} else {
-				values.clear();
-				values.put( DbSchema.COL_NAME, TEST_LUKKARI_NAME);
-				lukId = db.insertOrThrow( 
-						DbSchema.TBL_LUKKARI, null, values);
-			}
+			Cursor cursor;
+			ContentResolver resolver = getContentResolver();
 			
+			lukId = getDefaultLukkariId();
 			
-			Log.d(TAG, "Tulosten määrä " + cursor.getCount());
-			Log.d(TAG, "Lukkarin " + TEST_LUKKARI_NAME + " indeksi: " + lukId);
+//			Log.d(TAG, "Tulosten määrä " + cursor.getCount());
+//			Log.d(TAG, "Lukkarin " + TEST_LUKKARI_NAME + " indeksi: " + lukId);
 			
 			String relzWhere = DbSchema.COL_CODE + " = ?";
 			
@@ -340,17 +350,11 @@ public class LukkariActivity extends Activity
 				db.endTransaction();
 			}
 			
-			builder = new SQLiteQueryBuilder();
-			
-			builder.setTables( DbSchema.TBL_REALIZATION);
-			cursor = builder.query(db, 
-					new String[]{ DbSchema.COL_ID, DbSchema.COL_CODE}, 
-					null,
-					null, 
-					null, 
-					null,
-					DbSchema.COL_CODE + " ASC");
-			cursor.moveToFirst();
+			cursor = resolver.query(Realization.CONTENT_URI, 
+			      new String[]{ Realization.Columns.ID, Realization.Columns.CODE }, 
+			      null, 
+			      null, 
+			      Realization.Columns.CODE + " ASC");
 
 			Log.d(TAG, "Toteutusten määrä " + cursor.getCount());
 			
@@ -420,8 +424,8 @@ public class LukkariActivity extends Activity
 						relzId = db.insertWithOnConflict( DbSchema.TBL_REALIZATION, 
 								null, values, SQLiteDatabase.CONFLICT_IGNORE);
 						
-						int lukId = 
-							getIdColumnValue( getLukkariByName(TEST_LUKKARI_NAME), 0);
+						long lukId = 
+							getDefaultLukkariId();
 						values.clear();
 						values.put( DbSchema.COL_ID_LUKKARI, lukId);
 						values.put( DbSchema.COL_ID_REALIZATION, relzId);
