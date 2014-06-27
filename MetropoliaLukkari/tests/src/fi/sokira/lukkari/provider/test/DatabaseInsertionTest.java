@@ -2,9 +2,9 @@ package fi.sokira.lukkari.provider.test;
 
 import static fi.sokira.lukkari.provider.DatabaseHelper.clearDatabase;
 import static fi.sokira.lukkari.provider.test.TestUtils.assertCursorColumn;
+import static fi.sokira.lukkari.provider.test.TestUtils.makeDate;
 
 import java.util.Calendar;
-import java.util.Date;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -264,19 +264,6 @@ public class DatabaseInsertionTest extends AndroidTestCase {
       assertCursorColumn( insertId, cursor, DbSchema.COL_ID);
       assertCursorColumn( TEST_STUDENT_GROUP_CODE, cursor, DbSchema.COL_CODE);
    }
-	
-	private Date makeDate( int year, int month, int day) {
-		return makeDate( year, month, day, 0, 0);
-	}
-	
-	private Date makeDate( int year, int month, int day, int hour, int minute) {
-		Calendar cal = Calendar.getInstance();
-		cal.setTimeInMillis(0);
-		cal.set(year, month, day, hour, minute);
-		return cal.getTime();
-	}
-	
-
 	
 	private Cursor doQuery(String inTables, String[] projection) {
 		return doQuery(inTables, projection, null);

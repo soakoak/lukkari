@@ -180,9 +180,12 @@ public class ResultListFragment extends ListFragment {
 
 		@Override
 		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-			MenuInflater inflater = mode.getMenuInflater();
-			inflater.inflate(R.menu.result_menu, menu);
-			return true;
+		   if( contentType == TYPE_REALIZATION) {
+   			MenuInflater inflater = mode.getMenuInflater();
+   			inflater.inflate(R.menu.result_menu, menu);
+   			return true;
+		   } else
+		      return false;
 		}
 
 		@Override

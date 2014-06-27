@@ -14,4 +14,7 @@ abstract class BaseDao {
    
    def update(writeableDb: SQLiteDatabase, values: ContentValues,
          selection: String, selectionArgs: Array[String]): Int
+         
+   def delete(writeableDb: SQLiteDatabase, 
+         selection: String, selectionArgs: Array[String]): Int
 }

@@ -35,16 +35,24 @@ class LukkariProvider extends ContentProvider {
          selection: String, selectionArgs: Array[String]) : Int = -1 
 
    override def insert(uri: Uri, values: ContentValues) : Uri = {
-      CUri( matchUri(uri)) match {
-         case CUri.StudentGroupList =>
-            def insertStudentGroup : Long = {
-               StudentGroupDao.insert(writeableDb, values)
+      def doInsert: Long = {
+         def doSimpleInsert( dao: BaseDao): Long = dao.insert(writeableDb, values)
+         
+         def matchUriToDao: BaseDao = 
+            CUri( matchUri(uri)) match {
+               case CUri.LukkariList => LukkariDao
+               case CUri.RealizationList => RealizationDao
+               case CUri.ReservationList => ReservationDao
+               case CUri.StudentGroupList => StudentGroupDao  
+               case _ => throw new IllegalArgumentException(
+                              "Unsupported URI for insertion: " + uri)
             }
-            
-            getUriForId(insertStudentGroup, uri)
-         case _ => throw new IllegalArgumentException(
-                  "Unsupported URI for insertion: " + uri)
+         
+         val dao = matchUriToDao
+         doSimpleInsert(dao)
       }
+      
+      getUriForId( doInsert, uri)
    }
 
    override def query(uri: Uri, projection: Array[String],
@@ -62,13 +70,26 @@ class LukkariProvider extends ContentProvider {
          
          import CUri._
          CUri( matchUri(uri)) match {
-            
+            case LukkariId =>
+               val selection = 
+                  Lukkari.Columns.ID + " = " + uri.getLastPathSegment()
+               doQueryWithSelection(selection, selectionArgs)(LukkariDao)
+            case LukkariList =>
+               doSimpleQuery(LukkariDao)
+               
             case RealizationId =>
                val selection = 
                   Realization.Columns.ID + " = " + uri.getLastPathSegment()
                doQueryWithSelection(selection, selectionArgs)(RealizationDao)
             case RealizationList =>
                doSimpleQuery(RealizationDao)
+               
+            case ReservationId =>
+               val selection = 
+                  Reservation.Columns.ID + " = " + uri.getLastPathSegment()
+               doQueryWithSelection(selection, selectionArgs)(ReservationDao)
+            case ReservationList =>
+               doSimpleQuery(ReservationDao)
                
             case StudentGroupId =>
                val selection = 

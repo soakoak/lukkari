@@ -10,7 +10,7 @@ import lprovider.LukkariContract.Realization
 import lprovider.LukkariContract.Realization.Columns
 
 object RealizationDao extends BaseDao 
-      with SQLiteQuery with SQLiteInsert with SQLiteUpdate {
+      with SQLiteQuery with SQLiteInsert with SQLiteUpdate with SQLiteDelete {
 
    override val tableName = Realization.PATH   
    override val Tag = "RealizationDao"
