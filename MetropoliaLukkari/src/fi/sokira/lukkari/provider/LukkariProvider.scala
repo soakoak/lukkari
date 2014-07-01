@@ -11,7 +11,7 @@ import android.database.SQLException
 import android.util.Log
 import android.content.ContentUris
 import android.database.sqlite.SQLiteQueryBuilder
-import LukkariProvider.{CUri, matchUri}
+import LukkariProvider._
 
 class LukkariProvider extends ContentProvider {
    
@@ -32,24 +32,57 @@ class LukkariProvider extends ContentProvider {
    }
 
    override def delete(uri: Uri,
-         selection: String, selectionArgs: Array[String]) : Int = -1 
+         selection: String, selectionArgs: Array[String]) : Int = {
+      def doDelete: Int =  {
+         val dao = matchUriToDao(uri)
+         dao.delete(writeableDb, selection, selectionArgs)
+      }
+      
+      val delCount = doDelete
+      if( delCount > 0) {
+         getContext.getContentResolver.notifyChange(uri, null)
+      }
+      return delCount
+   }
 
+   @throws(classOf[IllegalArgumentException])
    override def insert(uri: Uri, values: ContentValues) : Uri = {
       def doInsert: Long = {
-         def doSimpleInsert( dao: BaseDao): Long = dao.insert(writeableDb, values)
+         val dao = matchUriToDao(uri)
          
-         def matchUriToDao: BaseDao = 
-            CUri( matchUri(uri)) match {
-               case CUri.LukkariList => LukkariDao
-               case CUri.RealizationList => RealizationDao
-               case CUri.ReservationList => ReservationDao
-               case CUri.StudentGroupList => StudentGroupDao  
-               case _ => throw new IllegalArgumentException(
-                              "Unsupported URI for insertion: " + uri)
+         if( dao == RealizationDao) {
+            val db = writeableDb
+            
+            db.beginTransaction()
+            try {
+               import LukkariContract.Lukkari.Columns.ID
+               val lukkariId = values.getAsLong(ID)
+               if(lukkariId == null) {
+                  Log.d(Tag, "No lukkari id provided when inserting realization")
+                  throw new IllegalArgumentException(
+                        "Lukkari id needed when inserting realization")
+               }
+               
+               values.remove(ID)
+               val realizationId = dao.insert(db, values)
+               
+               import DbSchema.{COL_ID_LUKKARI, COL_ID_REALIZATION}
+               val l2rValues = new ContentValues()
+               l2rValues.put(COL_ID_LUKKARI, lukkariId)
+               l2rValues.put(COL_ID_REALIZATION, Long.box(realizationId))
+               LukkariToRealizationDao.insert(db, l2rValues)
+               db.setTransactionSuccessful()
+               
+               realizationId
+            } catch {
+               case e: Exception =>
+                  Log.d(Tag, "Error while inside transaction")
+                  throw e
+            } finally {
+               db.endTransaction()
             }
-         
-         val dao = matchUriToDao
-         doSimpleInsert(dao)
+         } else
+            dao.insert(writeableDb, values)
       }
       
       getUriForId( doInsert, uri)
@@ -59,48 +92,9 @@ class LukkariProvider extends ContentProvider {
          selection: String, selectionArgs: Array[String],
          sortOrder: String): Cursor = {
       
-      def doQuery: Cursor = {
-         
-         def doSimpleQuery(dao: AnyRef with SQLiteQuery): Cursor =
-            doQueryWithSelection(selection, selectionArgs)(dao)
-         
-         def doQueryWithSelection(selection: String, 
-               selectionArgs: Array[String])(dao: AnyRef with SQLiteQuery): Cursor = 
-            dao.query(readableDb, projection, selection, selectionArgs, sortOrder)
-         
-         import CUri._
-         CUri( matchUri(uri)) match {
-            case LukkariId =>
-               val selection = 
-                  Lukkari.Columns.ID + " = " + uri.getLastPathSegment()
-               doQueryWithSelection(selection, selectionArgs)(LukkariDao)
-            case LukkariList =>
-               doSimpleQuery(LukkariDao)
-               
-            case RealizationId =>
-               val selection = 
-                  Realization.Columns.ID + " = " + uri.getLastPathSegment()
-               doQueryWithSelection(selection, selectionArgs)(RealizationDao)
-            case RealizationList =>
-               doSimpleQuery(RealizationDao)
-               
-            case ReservationId =>
-               val selection = 
-                  Reservation.Columns.ID + " = " + uri.getLastPathSegment()
-               doQueryWithSelection(selection, selectionArgs)(ReservationDao)
-            case ReservationList =>
-               doSimpleQuery(ReservationDao)
-               
-            case StudentGroupId =>
-               val selection = 
-                  StudentGroup.Columns.ID + " = " + uri.getLastPathSegment() 
-               doQueryWithSelection(selection, selectionArgs)(StudentGroupDao) 
-            case StudentGroupList =>
-               doSimpleQuery(StudentGroupDao)
-               
-            case _ => throw new IllegalArgumentException(
-                  "Unsupported URI: " + uri)
-         }
+      def doQuery: Cursor = {  
+         val dao = matchUriToDao(uri)
+         dao.query(readableDb, projection, selection, selectionArgs, sortOrder)
       }
       
       val cursor = doQuery
@@ -109,9 +103,21 @@ class LukkariProvider extends ContentProvider {
    }
    
    override def update(uri: Uri, values: ContentValues, selection: String,
-         selectionArgs: Array[String]) : Int = -1
+         selectionArgs: Array[String]) : Int = {
+      
+      def doUpdate: Int =  {
+         val dao = matchUriToDao(uri)
+         dao.update(writeableDb, values, selection, selectionArgs)
+      }
+      
+      val updateCount = doUpdate
+      if( updateCount > 0) {
+         getContext.getContentResolver.notifyChange(uri, null)
+      }
+      return updateCount
+   }
          
-   def getUriForId(id: Long, uri: Uri): Uri = {
+   private[this] def getUriForId(id: Long, uri: Uri): Uri = {
       id match {
          case -1 => throw new SQLException("Problem while inserting uri: " + uri)
          case _ =>
@@ -157,5 +163,32 @@ object LukkariProvider {
       uriMatcher
    }
    
-   def matchUri(uri: Uri) = uriMatcher.`match`(uri)
+   protected def matchUri(uri: Uri) = uriMatcher.`match`(uri)
+   
+   protected def matchUriToDao(uri: Uri): BaseDao = 
+      CUri( matchUri(uri)) match {
+         case CUri.LukkariList => LukkariDao
+         case CUri.RealizationList => RealizationDao
+         case CUri.ReservationList => ReservationDao
+         case CUri.StudentGroupList => StudentGroupDao  
+         case _ => throw new IllegalArgumentException(
+                        "Unsupported URI: " + uri)
+      }
+   
+   protected object LukkariToRealizationDao extends AbstractDao {
+      import DbSchema._
+      
+      override val Tag = "LukkariToRealizationDao"
+      override val tableName = TBL_LUKKARI_TO_REALIZATION
+      
+      override def uniqueSelection(values: ContentValues) = {
+         def getValue(column: String) = values.getAsString(column)
+      
+         val columns = List(COL_ID_LUKKARI, COL_ID_REALIZATION)
+         val selection = columns map (_ + " = ?") mkString " AND "
+         val selectionArgs = for(s <- columns) yield getValue(s)
+   
+         (selection, selectionArgs.toArray)
+      }
+   }
 }
