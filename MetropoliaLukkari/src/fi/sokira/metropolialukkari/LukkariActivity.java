@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
@@ -171,25 +169,8 @@ public class LukkariActivity extends Activity
 		switch( itemType) {
 		
 		case ResultListFragment.TYPE_REALIZATION :
-			new AlertDialog.Builder( this)
-				.setMessage(R.string.dialog_add_related_reservations)
-				.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-					
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						new SqlRealizationAddingTask( true)
-							.execute( items.toArray(new MpoliaRealization[items.size()]));
-					}
-				})
-				.setNegativeButton("No", new DialogInterface.OnClickListener() {
-					
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						new SqlRealizationAddingTask()
-							.execute( items.toArray(new MpoliaRealization[items.size()]));
-					}
-				})
-				.show();
+			new SqlRealizationAddingTask( true)
+				.execute( items.toArray(new MpoliaRealization[items.size()]));
 			break;
 			
 		case ResultListFragment.TYPE_RESERVATION :
