@@ -9,8 +9,8 @@ trait SQLiteUpdate extends BaseDao {
    
    override def update(writeableDb: SQLiteDatabase, values: ContentValues,
          selection: String, selectionArgs: Array[String]): Int = {
-      import android.database.sqlite.SQLiteDatabase.CONFLICT_FAIL
+      import android.database.sqlite.SQLiteDatabase.CONFLICT_ROLLBACK
       writeableDb.updateWithOnConflict(
-            tableName, values, selection, selectionArgs, CONFLICT_FAIL)
+            tableName, values, selection, selectionArgs, CONFLICT_ROLLBACK)
    }
 }

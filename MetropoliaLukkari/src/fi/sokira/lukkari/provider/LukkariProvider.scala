@@ -12,6 +12,7 @@ import android.util.Log
 import android.content.ContentUris
 import android.database.sqlite.SQLiteQueryBuilder
 import LukkariProvider._
+import android.database.sqlite.SQLiteDatabase
 
 class LukkariProvider extends ContentProvider {
    
@@ -45,56 +46,129 @@ class LukkariProvider extends ContentProvider {
       return delCount
    }
 
-   @throws(classOf[IllegalArgumentException])
    override def insert(uri: Uri, values: ContentValues) : Uri = {
-      def doInsert: Long = {
-         val dao = matchUriToDao(uri)
-         
-         if( dao == RealizationDao) {
-            val db = writeableDb
-            
-            db.beginTransaction()
-            try {
-               import LukkariContract.Lukkari.Columns.ID
-               val lukkariId = values.getAsLong(ID)
-               if(lukkariId == null) {
-                  Log.d(Tag, "No lukkari id provided when inserting realization")
-                  throw new IllegalArgumentException(
-                        "Lukkari id needed when inserting realization")
-               }
-               
-               values.remove(ID)
-               val realizationId = dao.insert(db, values)
-               
-               import DbSchema.{COL_ID_LUKKARI, COL_ID_REALIZATION}
-               val l2rValues = new ContentValues()
-               l2rValues.put(COL_ID_LUKKARI, lukkariId)
-               l2rValues.put(COL_ID_REALIZATION, Long.box(realizationId))
-               LukkariToRealizationDao.insert(db, l2rValues)
-               db.setTransactionSuccessful()
-               
-               realizationId
-            } catch {
-               case e: Exception =>
-                  Log.d(Tag, "Error while inside transaction")
-                  throw e
-            } finally {
-               db.endTransaction()
-            }
-         } else
-            dao.insert(writeableDb, values)
+      def doInsertWithTransaction: Long = {
+         val db = writeableDb
+         db.beginTransaction()
+         try {
+            val insertedId = doInsert(db)
+            db.setTransactionSuccessful()
+            insertedId
+         } catch {
+            case e: Exception =>
+               Log.d(Tag, "Error while inside transaction")
+               throw e
+         } finally {
+            db.endTransaction()
+         }
       }
       
-      getUriForId( doInsert, uri)
+      @throws(classOf[IllegalArgumentException])
+      def doInsert(writeableDb: SQLiteDatabase): Long = {
+         
+         def extractString(key: String): String = {
+            Option(values.getAsString(key)) match {
+               case Some(value) =>
+                  value
+               case None =>
+                  ""
+            }
+         }
+         
+         val NoLong = -1
+         def extractLong(key: String): Long = {
+            Option(values.getAsLong(key)) match {
+               case Some(value) =>
+                  value
+               case None =>
+                  -1
+            }
+         }
+         
+         def createLink(id: Long, linkFunction: (Long => Long)) = {
+            if(id != -1)
+               linkFunction(id)
+            else {
+               Log.e(Tag, "No fitting id provided when creating link using function: " +
+                     linkFunction.toString)
+               throw new IllegalArgumentException("Error while creating link")
+            }
+         }
+         
+         val dao = matchUriToDao(uri)
+         dao match {
+            case RealizationDao =>
+               import LukkariContract.Realization.Columns.{LUKKARI_ID => ID}
+               val lukkariId = extractLong(ID)
+               
+               values.remove(ID)
+               val realizationId = dao.insert(writeableDb, values)
+               
+               def linkToLukkari(lukkariId: Long): Long = {
+                  import DbSchema.{COL_ID_LUKKARI, COL_ID_REALIZATION}
+                  val values = new ContentValues()
+                  values.put(COL_ID_LUKKARI, Long.box(lukkariId))
+                  values.put(COL_ID_REALIZATION, Long.box(realizationId))
+                  LukkariToRealizationDao.insert(writeableDb, values)
+               }
+               val linkId = createLink(lukkariId, linkToLukkari)
+               if( linkId == -1) {
+                  throw new SQLException("Failed to link the realization with lukkari")
+               }
+               realizationId
+
+            case StudentGroupDao => 
+               import StudentGroup.Columns.{REALIZATION_ID => ReaId, 
+                  RESERVATION_ID => ResId}
+               val realizationId = extractLong(ReaId)
+               values.remove(ReaId)
+               val reservationId = extractLong(ResId)
+               values.remove(ResId)
+               
+               val groupId = dao.insert(writeableDb, values)
+
+               def linkToRealization(realizationId: Long): Long = {
+                  import DbSchema.{COL_ID_REALIZATION => ReaId,
+                     COL_ID_STUDENT_GROUP => StuId}
+                  val values = new ContentValues
+                  values.put(ReaId, Long.box(realizationId))
+                  values.put(StuId, Long.box(groupId))
+                  StudentGroupToRealizationDao.insert(writeableDb, values)
+               }
+               
+               def linkToReservation(reservationId: Long): Long = {
+                  import DbSchema.{COL_ID_RESERVATION => ResId,
+                     COL_ID_STUDENT_GROUP => StuId}
+                  val values = new ContentValues
+                  values.put(ResId, Long.box(reservationId))
+                  values.put(StuId, Long.box(groupId))
+                  StudentGroupToReservationDao.insert(writeableDb, values)
+               } 
+               
+               if( realizationId != NoLong)
+                  createLink( realizationId, linkToRealization)
+               if( reservationId != NoLong)
+                  createLink( reservationId, linkToReservation)
+               //TODO testaus
+               groupId
+            case _ => dao.insert(writeableDb, values)
+         }
+      }
+      
+      getUriForId( doInsertWithTransaction, uri)
    }
 
    override def query(uri: Uri, projection: Array[String],
          selection: String, selectionArgs: Array[String],
          sortOrder: String): Cursor = {
       
-      def doQuery: Cursor = {  
+      def doQuery: Cursor = {
          val dao = matchUriToDao(uri)
-         dao.query(readableDb, projection, selection, selectionArgs, sortOrder)
+         
+         dao match {
+            case _ => dao.query(
+                  readableDb, projection, selection, selectionArgs, sortOrder)
+         }
       }
       
       val cursor = doQuery
@@ -175,20 +249,41 @@ object LukkariProvider {
                         "Unsupported URI: " + uri)
       }
    
-   protected object LukkariToRealizationDao extends AbstractDao {
-      import DbSchema._
+   private[LukkariProvider] abstract class AbstractLinkDao extends AbstractDao {
       
-      override val Tag = "LukkariToRealizationDao"
-      override val tableName = TBL_LUKKARI_TO_REALIZATION
+      val columns: List[String]
       
       override def uniqueSelection(values: ContentValues) = {
          def getValue(column: String) = values.getAsString(column)
       
-         val columns = List(COL_ID_LUKKARI, COL_ID_REALIZATION)
          val selection = columns map (_ + " = ?") mkString " AND "
          val selectionArgs = for(s <- columns) yield getValue(s)
    
          (selection, selectionArgs.toArray)
       }
+   }
+   
+   protected object LukkariToRealizationDao extends AbstractLinkDao {
+      import DbSchema._
+      
+      override val Tag = "LukkariToRealizationDao"
+      override val tableName = TBL_LUKKARI_TO_REALIZATION
+      override val columns = List(COL_ID_LUKKARI, COL_ID_REALIZATION)
+   }
+   
+   protected object StudentGroupToRealizationDao extends AbstractLinkDao {
+      import DbSchema._
+      
+      override val Tag = "StudentGroupToRealizationDao"
+      override val tableName = TBL_REALIZATION_TO_STUDENT_GROUP
+      override val columns = List(COL_ID_REALIZATION, COL_ID_STUDENT_GROUP)
+   }
+   
+   protected object StudentGroupToReservationDao extends AbstractLinkDao {
+      import DbSchema._
+      
+      override val Tag = "StudentGroupToReservationDao"
+      override val tableName = TBL_RESERVATION_TO_STUDENT_GROUP
+      override val columns = List(COL_ID_RESERVATION, COL_ID_STUDENT_GROUP)
    }
 }

@@ -91,7 +91,7 @@ public class ProviderinsertionTest extends AndroidTestCase {
       
       long lukkariId = insertLukkari(TEST_LUKKARI_NAME);
       
-      values.put( Lukkari.Columns.ID, lukkariId);
+      values.put( Realization.Columns.LUKKARI_ID, lukkariId);
       insertUri = insertRealization(values);
       long insertId = ContentUris.parseId(insertUri);
       
@@ -120,7 +120,7 @@ public class ProviderinsertionTest extends AndroidTestCase {
    private Uri insertRealization(long lukkariId, String code, String name, Date startDate, Date endDate) {
       ContentValues values = new ContentValues();
 
-      values.put( Lukkari.Columns.ID, lukkariId);
+      values.put( Realization.Columns.LUKKARI_ID, lukkariId);
       values.put( Realization.Columns.CODE, TEST_REALIZATION_CODE);
       values.put( Realization.Columns.NAME, TEST_REALIZATION_NAME);
       values.put( Realization.Columns.START_DATE, startDate.getTime());
@@ -180,12 +180,30 @@ public class ProviderinsertionTest extends AndroidTestCase {
       values.put( Reservation.Columns.ROOM, room);
       values.put( Reservation.Columns.START_DATE, startDate.getTime());
       values.put( Reservation.Columns.END_DATE, endDate.getTime());
-      
+
       return mResolver.insert(URI_RESERVATION, values);
    }
    
    public void testStudentGroupInsertion() {
-      Uri insertUri = insertStudentGroup(TEST_STUDENT_GROUP_CODE);
+      long lukkariId = insertLukkari(TEST_LUKKARI_NAME);
+      long realizationId = ContentUris.parseId(
+            insertRealization(lukkariId, 
+               TEST_REALIZATION_CODE, TEST_REALIZATION_NAME,
+               makeDate(2014, 1, 1), makeDate(2014, 5, 31)));
+      
+      Calendar cal = Calendar.getInstance();
+      cal.setTime(makeDate(2014, 3, 12, 12, 30));
+      Date startDate = cal.getTime();
+      cal.add( Calendar.HOUR, 2);
+      cal.add( Calendar.MINUTE, 30);
+      Date endDate = cal.getTime();
+      long reservationId = ContentUris.parseId(insertReservation(realizationId, 
+               TEST_RESERVATION_ROOM, startDate, endDate));
+      
+      Uri insertUri = insertStudentGroup(
+            realizationId, 
+            reservationId, 
+            TEST_STUDENT_GROUP_CODE);
       
       long insertId = ContentUris.parseId(insertUri);
       
@@ -205,8 +223,15 @@ public class ProviderinsertionTest extends AndroidTestCase {
       //TODO linkitys toteutukseen ja varaukseen
    }
    
+   @SuppressWarnings("unused")
    private Uri insertStudentGroup(String code) {
+      return insertStudentGroup(null, null, code);
+   }
+   
+   private Uri insertStudentGroup(Long realizationId, Long reservationId, String code) {
       ContentValues values = new ContentValues();
+      values.put(StudentGroup.Columns.REALIZATION_ID, realizationId);
+      values.put(StudentGroup.Columns.RESERVATION_ID, reservationId);
       values.put(StudentGroup.Columns.CODE, code);
       return mResolver.insert(URI_STUDENT_GRP, values);
    }

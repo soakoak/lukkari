@@ -57,6 +57,10 @@ public final class LukkariContract {
 		
 		public final static class Columns {
 	      public static final String ID = DbSchema.COL_ID;
+	      /*
+	       * Extra column for linking to appropriate lukkaris on insert.
+	       */
+	      public static final String LUKKARI_ID = "lukkari_id";
          public static final String CODE = DbSchema.COL_CODE;
          public static final String NAME = DbSchema.COL_NAME;
          public static final String START_DATE = DbSchema.COL_START_DATE;
@@ -108,8 +112,15 @@ public final class LukkariContract {
 				+ MIME_END;
 
 		public final static class Columns {
+		   /*
+		    * Columns for linking the student group to appropriate 
+		    * realizations and reservations on insert.
+		    */
+		   public static final String REALIZATION_ID = "realization_id";
+		   public static final String RESERVATION_ID = "reservation_id";
+		   
+	      public static final String ID = DbSchema.COL_ID;
 		   public static final String CODE = DbSchema.COL_CODE;
-		   public static final String ID = DbSchema.COL_ID;
 		}
 
 	}
