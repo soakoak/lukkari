@@ -16,7 +16,8 @@ public interface DbSchema {
 							= "realization_to_student_group";
 	final static String TBL_RESERVATION_TO_STUDENT_GROUP 
 							= "reservation_to_student_group";
-	final static String TBL_DATA_LIST = "data_list";
+	final static String VIEW_DATA = "data_view";
+	final static String VIEW_REALIZATION = "realization_view";
 
 	final static String COL_ID = BaseColumns._ID;
 	final static String COL_NAME = "name"; //Nimi
@@ -93,15 +94,15 @@ public interface DbSchema {
 			")";
 
 	final static String CREATE_VIEW_DATA_LIST = 
-		"CREATE VIEW " + TBL_DATA_LIST + " AS "
-			+ "SELECT "
-			+ "rv." + COL_ID
+		"CREATE VIEW IF NOT EXISTS " + VIEW_DATA + " AS "
+			+ "SELECT"
+			+ " rv." + COL_ID
 			+ ", l." + COL_NAME + " AS " + COL_NAME_LUKKARI 
 			+ ", rz." + COL_NAME + " AS " + COL_NAME_REALIZATION
 			+ ", rv." + COL_ROOM
 			+ ", rv." + COL_START_DATE 
 			+ ", rv." + COL_END_DATE
-				+ " FROM lukkari AS l"
+				+ " FROM " + TBL_LUKKARI + " AS l"
 			+ " LEFT OUTER JOIN "
 				+ TBL_LUKKARI_TO_REALIZATION + " AS lr"
 				+ " ON l." + COL_ID + " = lr." + COL_ID_LUKKARI
@@ -111,5 +112,21 @@ public interface DbSchema {
 			+ " INNER JOIN "
 				+ TBL_RESERVATION + " AS rv"
 				+ " ON rz." + COL_ID + " = rv." + COL_ID_REALIZATION;
+	
+	final static String CREATE_VIEW_REALIZATION =
+      "CREATE VIEW IF NOT EXISTS " + VIEW_REALIZATION + " AS "
+         + "SELECT"
+         + " l." + COL_ID + " AS " + COL_ID_LUKKARI
+         + ", l." + COL_NAME + " AS " + COL_NAME_LUKKARI
+         + ", rz." + COL_ID
+         + ", rz." + COL_CODE
+      	+ ", rz." + COL_NAME
+      	+ ", rz." + COL_START_DATE
+      	+ ", rz." + COL_END_DATE
+         + " FROM " + TBL_LUKKARI + " AS l"
+      + " INNER JOIN " + TBL_LUKKARI_TO_REALIZATION + " AS lr"
+         + " ON l." + COL_ID + " = lr." + COL_ID_LUKKARI
+      + " INNER JOIN " + TBL_REALIZATION + " AS rz"
+         + " ON lr." + COL_ID_REALIZATION + " = rz." + COL_ID;
 
 }

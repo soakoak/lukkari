@@ -70,7 +70,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				DbSchema.CREATE_TABLE_RESERVATION,
 				DbSchema.CREATE_TABLE_STUDENT_GROUP,
 				DbSchema.CREATE_TABLE_REALIZATION_TO_STUDENT_GROUP,
-				DbSchema.CREATE_TABLE_RESERVATION_TO_STUDENT_GROUP
+				DbSchema.CREATE_TABLE_RESERVATION_TO_STUDENT_GROUP,
+				DbSchema.CREATE_VIEW_DATA_LIST,
+				DbSchema.CREATE_VIEW_REALIZATION
 			};
 		
 		for( String op : createOperations) {
