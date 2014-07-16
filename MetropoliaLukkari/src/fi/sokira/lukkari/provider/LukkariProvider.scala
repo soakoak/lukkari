@@ -13,6 +13,7 @@ import android.content.ContentUris
 import android.database.sqlite.SQLiteQueryBuilder
 import LukkariProvider._
 import android.database.sqlite.SQLiteDatabase
+import fi.sokira.metropolialukkari.LukkariUtils.{RichContentValues => RichValues} 
 
 class LukkariProvider extends ContentProvider {
    
@@ -66,25 +67,6 @@ class LukkariProvider extends ContentProvider {
       @throws(classOf[IllegalArgumentException])
       def doInsert(writeableDb: SQLiteDatabase): Long = {
          
-         def extractString(key: String): String = {
-            Option(values.getAsString(key)) match {
-               case Some(value) =>
-                  value
-               case None =>
-                  ""
-            }
-         }
-         
-         val NoLong = -1
-         def extractLong(key: String): Long = {
-            Option(values.getAsLong(key)) match {
-               case Some(value) =>
-                  value
-               case None =>
-                  -1
-            }
-         }
-         
          def createLink(id: Long, linkFunction: (Long => Long)) = {
             if(id != -1)
                linkFunction(id)
@@ -99,7 +81,7 @@ class LukkariProvider extends ContentProvider {
          dao match {
             case RealizationDao =>
                import LukkariContract.Realization.Columns.{LUKKARI_ID => ID}
-               val lukkariId = extractLong(ID)
+               val lukkariId = values.extractLong(ID)
                
                values.remove(ID)
                val realizationId = dao.insert(writeableDb, values)
@@ -120,9 +102,9 @@ class LukkariProvider extends ContentProvider {
             case StudentGroupDao => 
                import StudentGroup.Columns.{REALIZATION_ID => ReaId, 
                   RESERVATION_ID => ResId}
-               val realizationId = extractLong(ReaId)
+               val realizationId = values.extractLong(ReaId)
                values.remove(ReaId)
-               val reservationId = extractLong(ResId)
+               val reservationId = values.extractLong(ResId)
                values.remove(ResId)
                
                val groupId = dao.insert(writeableDb, values)
@@ -145,6 +127,7 @@ class LukkariProvider extends ContentProvider {
                   StudentGroupToReservationDao.insert(writeableDb, values)
                } 
                
+               import RichValues.NoLong
                if( realizationId != NoLong)
                   createLink( realizationId, linkToRealization)
                if( reservationId != NoLong)
@@ -167,7 +150,7 @@ class LukkariProvider extends ContentProvider {
          
          dao match {
             case _ => dao.query(
-                  readableDb, projection, selection, selectionArgs, sortOrder)
+               readableDb, projection, selection, selectionArgs, sortOrder)
          }
       }
       
