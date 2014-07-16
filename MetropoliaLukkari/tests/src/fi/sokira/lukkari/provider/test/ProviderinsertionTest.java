@@ -100,7 +100,8 @@ public class ProviderinsertionTest extends AndroidTestCase {
             Realization.Columns.CODE,
             Realization.Columns.NAME,
             Realization.Columns.START_DATE,
-            Realization.Columns.END_DATE };
+            Realization.Columns.END_DATE,
+            Realization.Columns.LUKKARI_ID};
       
       Cursor cursor = query(URI_REALIZATION, allColumns);
       cursor.moveToFirst();
@@ -113,6 +114,7 @@ public class ProviderinsertionTest extends AndroidTestCase {
       assertCursorColumn(TEST_REALIZATION_NAME, cursor, allColumns[2]);
       assertCursorColumn(startDate, cursor, allColumns[3]);
       assertCursorColumn(endDate, cursor, allColumns[4]);
+      assertCursorColumn(lukkariId, cursor, allColumns[5]);
       
       //TODO haku lukkarin nimellä
    }
