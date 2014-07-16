@@ -12,8 +12,9 @@ import lprovider.LukkariContract.Realization.Columns
 object RealizationDao extends BaseDao 
       with SQLiteQuery with SQLiteInsert with SQLiteUpdate with SQLiteDelete {
 
-   override val tableName = Realization.PATH   
+   override val tableName = Realization.PATH 
    override val Tag = "RealizationDao"
+   override val queryTableName = lprovider.DbSchema.VIEW_REALIZATION
 
    override def uniqueSelection(values: ContentValues): (String, Array[String]) = {
       (Columns.CODE + " = ?", Array( values.getAsString(Columns.CODE)))

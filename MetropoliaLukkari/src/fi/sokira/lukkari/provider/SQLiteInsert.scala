@@ -12,12 +12,14 @@ trait SQLiteInsert extends BaseDao {
    val Tag: String
    val tableName: String
    val columnId = "_id"
+      
+   def insertTableName = tableName
 
    def uniqueSelection(values: ContentValues): (String, Array[String])
    
    override def insert(writeableDb: SQLiteDatabase, values: ContentValues): Long = {
       try {
-         writeableDb.insertOrThrow(tableName, null, values)
+         writeableDb.insertOrThrow(insertTableName, null, values)
       } catch {
          case ex: SQLException =>
             Log.i(this.Tag, "Error while inserting to database, attempting update.")

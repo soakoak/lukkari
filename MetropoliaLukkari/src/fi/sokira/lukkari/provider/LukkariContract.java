@@ -58,9 +58,12 @@ public final class LukkariContract {
 		public final static class Columns {
 	      public static final String ID = DbSchema.COL_ID;
 	      /*
-	       * Extra column for linking to appropriate lukkaris on insert.
+	       * Extra columns for linking to appropriate lukkaris.
 	       */
-	      public static final String LUKKARI_ID = "lukkari_id";
+	      public static final String LUKKARI_ID = DbSchema.COL_ID_LUKKARI;
+	      //TODO insert
+	      public static final String LUKKARI_NAME = DbSchema.COL_NAME_LUKKARI;
+	      
          public static final String CODE = DbSchema.COL_CODE;
          public static final String NAME = DbSchema.COL_NAME;
          public static final String START_DATE = DbSchema.COL_START_DATE;

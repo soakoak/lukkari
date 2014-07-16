@@ -7,12 +7,13 @@ import android.database.sqlite.SQLiteQueryBuilder
 trait SQLiteQuery extends BaseDao {
 
    val tableName: String
+   def queryTableName = tableName
    
    def query(readableDb: SQLiteDatabase, projection: Array[String],
          selection: String, selectionArgs: Array[String], 
          sortOrder: String): Cursor = {
       val builder = new SQLiteQueryBuilder
-      builder.setTables(tableName)
+      builder.setTables(queryTableName)
       builder.query(
             readableDb,
             projection, 
