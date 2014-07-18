@@ -91,7 +91,9 @@ public class ProviderinsertionTest extends AndroidTestCase {
       
       long lukkariId = insertLukkari(TEST_LUKKARI_NAME);
       
+      values.put( Realization.Columns.LUKKARI_NAME, TEST_LUKKARI_NAME);
       values.put( Realization.Columns.LUKKARI_ID, lukkariId);
+      
       insertUri = insertRealization(values);
       long insertId = ContentUris.parseId(insertUri);
       
@@ -101,7 +103,8 @@ public class ProviderinsertionTest extends AndroidTestCase {
             Realization.Columns.NAME,
             Realization.Columns.START_DATE,
             Realization.Columns.END_DATE,
-            Realization.Columns.LUKKARI_ID};
+            Realization.Columns.LUKKARI_ID,
+            Realization.Columns.LUKKARI_NAME};
       
       Cursor cursor = query(URI_REALIZATION, allColumns);
       cursor.moveToFirst();
@@ -115,6 +118,7 @@ public class ProviderinsertionTest extends AndroidTestCase {
       assertCursorColumn(startDate, cursor, allColumns[3]);
       assertCursorColumn(endDate, cursor, allColumns[4]);
       assertCursorColumn(lukkariId, cursor, allColumns[5]);
+      assertCursorColumn(TEST_LUKKARI_NAME, cursor, allColumns[6]);
       
       //TODO haku lukkarin nimellä
    }

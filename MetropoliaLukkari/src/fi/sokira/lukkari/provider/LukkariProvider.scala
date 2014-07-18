@@ -80,10 +80,21 @@ class LukkariProvider extends ContentProvider {
          val dao = matchUriToDao(uri)
          dao match {
             case RealizationDao =>
-               import LukkariContract.Realization.Columns.{LUKKARI_ID => ID}
-               val lukkariId = values.extractLong(ID)
+               import LukkariContract.Realization.Columns.{LUKKARI_ID => ID, 
+                  LUKKARI_NAME => NAME}
+
+               val lukkariName = values.extractString(NAME)
+               val lukkariId = Option(lukkariName) match {
+                  case Some(s) if (!s.isEmpty) =>
+                     val values = new ContentValues
+                     values.put(Lukkari.Columns.NAME, s)
+                     LukkariDao.insert(writeableDb, values)
+                  case _ => values.extractLong(ID)
+               }
                
+               values.remove(NAME)
                values.remove(ID)
+               
                val realizationId = dao.insert(writeableDb, values)
                
                def linkToLukkari(lukkariId: Long): Long = {
@@ -93,8 +104,9 @@ class LukkariProvider extends ContentProvider {
                   values.put(COL_ID_REALIZATION, Long.box(realizationId))
                   LukkariToRealizationDao.insert(writeableDb, values)
                }
+               
                val linkId = createLink(lukkariId, linkToLukkari)
-               if( linkId == -1) {
+               if( linkId == RichValues.NoLong) {
                   throw new SQLException("Failed to link the realization with lukkari")
                }
                realizationId
