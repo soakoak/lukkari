@@ -15,9 +15,19 @@ object LukkariUtils {
                NoLong
          }
       }
+      
+      def extractString(key: String): String = {
+         Option(values.getAsString(key)) match {
+            case Some(value) =>
+               value
+            case None =>
+               NoString
+         }
+      }
    }
    
    object RichContentValues {
       def NoLong = -1
+      def NoString = ""
    }
 }
