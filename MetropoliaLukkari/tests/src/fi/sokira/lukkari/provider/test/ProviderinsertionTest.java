@@ -1,6 +1,5 @@
 package fi.sokira.lukkari.provider.test;
 
-import static fi.sokira.lukkari.provider.DatabaseHelper.clearDatabase;
 import static fi.sokira.lukkari.provider.test.TestUtils.assertCursorColumn;
 import static fi.sokira.lukkari.provider.test.TestUtils.makeDate;
 
@@ -10,19 +9,17 @@ import java.util.Date;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
-import android.test.AndroidTestCase;
-import android.test.IsolatedContext;
-import fi.sokira.lukkari.provider.DatabaseHelper;
+import android.test.ProviderTestCase2;
+import fi.sokira.lukkari.provider.LukkariContract;
 import fi.sokira.lukkari.provider.LukkariContract.Lukkari;
 import fi.sokira.lukkari.provider.LukkariContract.Realization;
 import fi.sokira.lukkari.provider.LukkariContract.Reservation;
 import fi.sokira.lukkari.provider.LukkariContract.StudentGroup;
+import fi.sokira.lukkari.provider.LukkariProvider;
 
-public class ProviderinsertionTest extends AndroidTestCase {
+public class ProviderinsertionTest extends ProviderTestCase2<LukkariProvider> {
 
    private ContentResolver mResolver;
    
@@ -37,13 +34,19 @@ public class ProviderinsertionTest extends AndroidTestCase {
    private final static Uri URI_RESERVATION = Reservation.CONTENT_URI;
    private final static Uri URI_STUDENT_GRP = StudentGroup.CONTENT_URI;
    
+   public ProviderinsertionTest() {
+      super(LukkariProvider.class, LukkariContract.AUTHORITY);
+   }
+   
    @Override
    protected void setUp() throws Exception {
-      IsolatedContext ctx = new IsolatedContext(
-            getContext().getContentResolver(), 
-            getContext());
-      setContext(ctx);
-      mResolver = ctx.getContentResolver();
+      super.setUp();
+      mResolver = getMockContentResolver();
+   }
+   
+   @Override
+   protected void tearDown() throws Exception {
+      super.tearDown();
    }
    
    public void testLukkariInsertion() {
@@ -240,16 +243,6 @@ public class ProviderinsertionTest extends AndroidTestCase {
       values.put(StudentGroup.Columns.RESERVATION_ID, reservationId);
       values.put(StudentGroup.Columns.CODE, code);
       return mResolver.insert(URI_STUDENT_GRP, values);
-   }
-   
-   @Override
-   protected void tearDown() throws Exception {
-      Context ctx = getContext();
-      SQLiteDatabase mDatabase = new DatabaseHelper(ctx).getWritableDatabase();
-      clearDatabase(mDatabase);
-      new DatabaseHelper(ctx).onCreate(mDatabase);
-      mDatabase.close();
-      super.tearDown();
    }
    
    private Cursor query(Uri contentUri, String[] projection) {

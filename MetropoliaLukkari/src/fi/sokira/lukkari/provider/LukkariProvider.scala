@@ -195,6 +195,9 @@ class LukkariProvider extends ContentProvider {
             itemUri
       }
    }
+   
+   override def shutdown = 
+      mHelper.close()
 }
 
 object LukkariProvider {
