@@ -56,14 +56,13 @@ public final class LukkariContract {
 		public static final String SORT_BY_NAME = Columns.NAME + "ASC";
 		
 		public final static class Columns {
-	      public static final String ID = DbSchema.COL_ID;
 	      /*
 	       * Extra columns for linking to appropriate lukkaris.
 	       */
 	      public static final String LUKKARI_ID = DbSchema.COL_ID_LUKKARI;
-	      //TODO insert
 	      public static final String LUKKARI_NAME = DbSchema.COL_NAME_LUKKARI;
 	      
+	      public static final String ID = DbSchema.COL_ID;
          public static final String CODE = DbSchema.COL_CODE;
          public static final String NAME = DbSchema.COL_NAME;
          public static final String START_DATE = DbSchema.COL_START_DATE;
@@ -117,10 +116,10 @@ public final class LukkariContract {
 		public final static class Columns {
 		   /*
 		    * Columns for linking the student group to appropriate 
-		    * realizations and reservations on insert.
+		    * realizations and reservations.
 		    */
-		   public static final String REALIZATION_ID = "realization_id";
-		   public static final String RESERVATION_ID = "reservation_id";
+		   public static final String REALIZATION_ID = DbSchema.COL_ID_REALIZATION;
+		   public static final String RESERVATION_ID = DbSchema.COL_ID_RESERVATION;
 		   
 	      public static final String ID = DbSchema.COL_ID;
 		   public static final String CODE = DbSchema.COL_CODE;

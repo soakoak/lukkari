@@ -2,6 +2,7 @@ package fi.sokira.lukkari.provider;
 
 import android.provider.BaseColumns;
 
+//TODO: cascade?
 
 public interface DbSchema {
 	

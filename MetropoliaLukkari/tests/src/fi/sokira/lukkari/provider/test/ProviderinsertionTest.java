@@ -12,6 +12,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
 import android.test.ProviderTestCase2;
+import android.util.Log;
 import fi.sokira.lukkari.provider.LukkariContract;
 import fi.sokira.lukkari.provider.LukkariContract.Lukkari;
 import fi.sokira.lukkari.provider.LukkariContract.Realization;
@@ -22,6 +23,8 @@ import fi.sokira.lukkari.provider.LukkariProvider;
 public class ProviderinsertionTest extends ProviderTestCase2<LukkariProvider> {
 
    private ContentResolver mResolver;
+
+   private final static String TAG = ProviderinsertionTest.class.getSimpleName();
    
    private final static String TEST_LUKKARI_NAME = "testi_lukkari";
    private final static String TEST_REALIZATION_CODE = "T3ST444444N-0123456";
@@ -90,13 +93,14 @@ public class ProviderinsertionTest extends ProviderTestCase2<LukkariProvider> {
          insertUri = insertRealization(values);
          fail("Missing IllegalArgumentException");
       } catch (IllegalArgumentException e) {
+         Log.i(TAG, "Caught exception when inserting realization, as planned");
       }
       
       long lukkariId = insertLukkari(TEST_LUKKARI_NAME);
       
       values.put( Realization.Columns.LUKKARI_NAME, TEST_LUKKARI_NAME);
       values.put( Realization.Columns.LUKKARI_ID, lukkariId);
-      
+
       insertUri = insertRealization(values);
       long insertId = ContentUris.parseId(insertUri);
       
@@ -123,6 +127,7 @@ public class ProviderinsertionTest extends ProviderTestCase2<LukkariProvider> {
       assertCursorColumn(lukkariId, cursor, allColumns[5]);
       assertCursorColumn(TEST_LUKKARI_NAME, cursor, allColumns[6]);
       
+      //TODO voisiko testejä eritellä?
       //TODO haku lukkarin nimellä
    }
    

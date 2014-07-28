@@ -4,3 +4,4 @@ jarfile_org.scala-lang.scala-actors_2.11.1.v20140519-130118-1e1defd99c.jar_plugi
 jarfile_org.scala-lang.scala-library_2.11.1.v20140519-130118-1e1defd99c.jar_plugins=inputjar
 jarfile_org.scala-lang.scala-reflect_2.11.1.v20140519-130118-1e1defd99c.jar_plugins=inputjar
 jarfile_scala-swing.jar_lib=inputjar
+jarfile_scala_library.min.jar_libs=libraryjar

@@ -38,6 +38,8 @@ class LukkariProvider extends ContentProvider {
       def doDelete: Int =  {
          val dao = matchUriToDao(uri)
          dao.delete(writeableDb, selection, selectionArgs)
+         
+         // TODO
       }
       
       val delCount = doDelete
@@ -85,6 +87,10 @@ class LukkariProvider extends ContentProvider {
 
                val lukkariName = values.extractString(NAME)
                val lukkariId = Option(lukkariName) match {
+                  /*
+                   * In case there is a name included, we try to insert a new lukkari. 
+                   * Otherwise we extract whatever has been included as ID.
+                   */
                   case Some(s) if (!s.isEmpty) =>
                      val values = new ContentValues
                      values.put(Lukkari.Columns.NAME, s)
@@ -92,10 +98,8 @@ class LukkariProvider extends ContentProvider {
                   case _ => values.extractLong(ID)
                }
                
-               values.remove(NAME)
-               values.remove(ID)
-               
-               val realizationId = dao.insert(writeableDb, values)
+               val trimmedValues = trimContentValues(dao, values)
+               val realizationId = dao.insert(writeableDb, trimmedValues)
                
                def linkToLukkari(lukkariId: Long): Long = {
                   import DbSchema.{COL_ID_LUKKARI, COL_ID_REALIZATION}
@@ -115,11 +119,10 @@ class LukkariProvider extends ContentProvider {
                import StudentGroup.Columns.{REALIZATION_ID => ReaId, 
                   RESERVATION_ID => ResId}
                val realizationId = values.extractLong(ReaId)
-               values.remove(ReaId)
                val reservationId = values.extractLong(ResId)
-               values.remove(ResId)
                
-               val groupId = dao.insert(writeableDb, values)
+               val trimmedValues = trimContentValues(dao, values)
+               val groupId = dao.insert(writeableDb, trimmedValues)
 
                def linkToRealization(realizationId: Long): Long = {
                   import DbSchema.{COL_ID_REALIZATION => ReaId,
@@ -163,6 +166,7 @@ class LukkariProvider extends ContentProvider {
          dao match {
             case _ => dao.query(
                readableDb, projection, selection, selectionArgs, sortOrder)
+               //TODO studentgroup-kolumnien käyttö haussa
          }
       }
       
@@ -175,8 +179,9 @@ class LukkariProvider extends ContentProvider {
          selectionArgs: Array[String]) : Int = {
       
       def doUpdate: Int =  {
-         val dao = matchUriToDao(uri)
-         dao.update(writeableDb, values, selection, selectionArgs)
+         val dao = matchUriToDao(uri) 
+         val trimmedValues = trimContentValues(dao, values)
+         dao.update(writeableDb, trimmedValues, selection, selectionArgs)
       }
       
       val updateCount = doUpdate
@@ -195,6 +200,14 @@ class LukkariProvider extends ContentProvider {
             itemUri
       }
    }
+   
+   private[this] def trimContentValues(dao: BaseDao, values: ContentValues) =
+      dao match {
+         case extra: AbstractDao with ExtraColumns =>
+            extra.removeExtraColumns(values)
+         case _ => values
+      }
+
    
    override def shutdown = 
       mHelper.close()
@@ -247,41 +260,65 @@ object LukkariProvider {
                         "Unsupported URI: " + uri)
       }
    
-   private[LukkariProvider] abstract class AbstractLinkDao extends AbstractDao {
-      
-      val columns: List[String]
-      
-      override def uniqueSelection(values: ContentValues) = {
-         def getValue(column: String) = values.getAsString(column)
-      
-         val selection = columns map (_ + " = ?") mkString " AND "
-         val selectionArgs = for(s <- columns) yield getValue(s)
-   
-         (selection, selectionArgs.toArray)
-      }
+   protected object LukkariDao extends AbstractDao {
+
+      override val Tag = "LukkariDao"
+      override val tableName = Lukkari.PATH
+      import Lukkari.Columns.NAME
+      override val uniqueColumns = List(NAME)
    }
    
-   protected object LukkariToRealizationDao extends AbstractLinkDao {
+   object RealizationDao extends AbstractDao with ExtraColumns {
+
+      override val tableName = Realization.PATH 
+      override val Tag = "RealizationDao"
+      override val queryTableName = DbSchema.VIEW_REALIZATION
+      
+      import Realization.Columns._
+      override val uniqueColumns = List(CODE)    
+      override val realColumns = List(ID, CODE, NAME, START_DATE, END_DATE)
+   }
+   
+   object ReservationDao extends AbstractDao {
+
+      override val Tag = "ReservationDao"
+      override val tableName = Reservation.PATH
+      import Reservation.Columns._
+      override val uniqueColumns = 
+         List(ROOM, START_DATE, END_DATE)
+   }
+   
+   object StudentGroupDao extends AbstractDao with ExtraColumns {
+
+      override val Tag = "StudentGroupDao"
+      override val tableName = StudentGroup.PATH
+      
+      import StudentGroup.Columns._
+      override val uniqueColumns = List(CODE)
+      override val realColumns = List(ID, CODE)
+   }
+   
+   protected object LukkariToRealizationDao extends AbstractDao {
       import DbSchema._
       
       override val Tag = "LukkariToRealizationDao"
       override val tableName = TBL_LUKKARI_TO_REALIZATION
-      override val columns = List(COL_ID_LUKKARI, COL_ID_REALIZATION)
+      override val uniqueColumns = List(COL_ID_LUKKARI, COL_ID_REALIZATION)
    }
    
-   protected object StudentGroupToRealizationDao extends AbstractLinkDao {
+   protected object StudentGroupToRealizationDao extends AbstractDao {
       import DbSchema._
       
       override val Tag = "StudentGroupToRealizationDao"
       override val tableName = TBL_REALIZATION_TO_STUDENT_GROUP
-      override val columns = List(COL_ID_REALIZATION, COL_ID_STUDENT_GROUP)
+      override val uniqueColumns = List(COL_ID_REALIZATION, COL_ID_STUDENT_GROUP)
    }
    
-   protected object StudentGroupToReservationDao extends AbstractLinkDao {
+   protected object StudentGroupToReservationDao extends AbstractDao {
       import DbSchema._
       
       override val Tag = "StudentGroupToReservationDao"
       override val tableName = TBL_RESERVATION_TO_STUDENT_GROUP
-      override val columns = List(COL_ID_RESERVATION, COL_ID_STUDENT_GROUP)
+      override val uniqueColumns = List(COL_ID_RESERVATION, COL_ID_STUDENT_GROUP)
    }
 }
