@@ -81,7 +81,7 @@ class LukkariProvider extends ContentProvider {
          
          val dao = matchUriToDao(uri)
          dao match {
-            case RealizationDao =>
+            case reaDao @ RealizationDao =>
                import LukkariContract.Realization.Columns.{LUKKARI_ID => ID, 
                   LUKKARI_NAME => NAME}
 
@@ -98,8 +98,7 @@ class LukkariProvider extends ContentProvider {
                   case _ => values.extractLong(ID)
                }
                
-               val trimmedValues = trimContentValues(dao, values)
-               val realizationId = dao.insert(writeableDb, trimmedValues)
+               val realizationId = reaDao.insert(writeableDb, values)
                
                def linkToLukkari(lukkariId: Long): Long = {
                   import DbSchema.{COL_ID_LUKKARI, COL_ID_REALIZATION}
@@ -115,14 +114,13 @@ class LukkariProvider extends ContentProvider {
                }
                realizationId
 
-            case StudentGroupDao => 
+            case sgDao @ StudentGroupDao => 
                import StudentGroup.Columns.{REALIZATION_ID => ReaId, 
                   RESERVATION_ID => ResId}
                val realizationId = values.extractLong(ReaId)
                val reservationId = values.extractLong(ResId)
                
-               val trimmedValues = trimContentValues(dao, values)
-               val groupId = dao.insert(writeableDb, trimmedValues)
+               val groupId = sgDao.insert(writeableDb, values)
 
                def linkToRealization(realizationId: Long): Long = {
                   import DbSchema.{COL_ID_REALIZATION => ReaId,
@@ -153,7 +151,17 @@ class LukkariProvider extends ContentProvider {
          }
       }
       
-      getUriForId( doInsertWithTransaction, uri)
+      def makeUri( row: Long) =
+        row match {
+         case -1 => throw new SQLException("Problem while inserting uri: " + uri)
+         case _ =>
+            ContentUris.withAppendedId(uri, row)
+      } 
+      
+      val rowOfInsertedValue = doInsertWithTransaction
+      val uriOfInsertedValue = makeUri( rowOfInsertedValue)
+      getContext().getContentResolver().notifyChange(uriOfInsertedValue, null)
+      uriOfInsertedValue
    }
 
    override def query(uri: Uri, projection: Array[String],
@@ -180,8 +188,7 @@ class LukkariProvider extends ContentProvider {
       
       def doUpdate: Int =  {
          val dao = matchUriToDao(uri) 
-         val trimmedValues = trimContentValues(dao, values)
-         dao.update(writeableDb, trimmedValues, selection, selectionArgs)
+         dao.update(writeableDb, values, selection, selectionArgs)
       }
       
       val updateCount = doUpdate
@@ -190,24 +197,6 @@ class LukkariProvider extends ContentProvider {
       }
       return updateCount
    }
-         
-   private[this] def getUriForId(id: Long, uri: Uri): Uri = {
-      id match {
-         case -1 => throw new SQLException("Problem while inserting uri: " + uri)
-         case _ =>
-            val itemUri = ContentUris.withAppendedId(uri, id)
-            getContext().getContentResolver().notifyChange(itemUri, null)
-            itemUri
-      }
-   }
-   
-   private[this] def trimContentValues(dao: BaseDao, values: ContentValues) =
-      dao match {
-         case extra: AbstractDao with ExtraColumns =>
-            extra.removeExtraColumns(values)
-         case _ => values
-      }
-
    
    override def shutdown = 
       mHelper.close()
@@ -268,7 +257,7 @@ object LukkariProvider {
       override val uniqueColumns = List(NAME)
    }
    
-   object RealizationDao extends AbstractDao with ExtraColumns {
+   object RealizationDao extends AbstractDao with ExtraColumns with ContentValueTrim {
 
       override val tableName = Realization.PATH 
       override val Tag = "RealizationDao"
@@ -288,7 +277,7 @@ object LukkariProvider {
          List(ROOM, START_DATE, END_DATE)
    }
    
-   object StudentGroupDao extends AbstractDao with ExtraColumns {
+   object StudentGroupDao extends AbstractDao with ExtraColumns with ContentValueTrim {
 
       override val Tag = "StudentGroupDao"
       override val tableName = StudentGroup.PATH
