@@ -1,13 +1,17 @@
 package fi.sokira.metropolialukkari
 
-import android.os.AsyncTask
-import fi.sokira.metropolialukkari.models.MpoliaRealization
-import android.widget.Toast
-import android.content.Context
-import fi.sokira.lukkari.provider.{LukkariContract => Contract}
-import android.net.Uri
-import android.content.ContentValues
 import android.content.ContentProviderOperation
+import android.content.ContentValues
+import android.content.Context
+import android.net.Uri
+import android.os.AsyncTask
+import android.widget.Toast
+import fi.sokira.lukkari.provider.{LukkariContract => Contract}
+import fi.sokira.lukkari.provider.LukkariContract
+import fi.sokira.metropolialukkari.models.MpoliaRealization
+import java.util.ArrayList
+import android.content.OperationApplicationException
+import android.util.Log
 
 class MpoliaRealizationAddingTask(context: Context) extends AsyncTask[MpoliaRealization, Void, Boolean] {
 
@@ -37,10 +41,40 @@ class MpoliaRealizationAddingTask(context: Context) extends AsyncTask[MpoliaReal
          values.put(Realization.Columns.LUKKARI_NAME, TestLukkariName)
       }
       
-      val operations = for(values <- realizationValues) yield { 
-         ContentProviderOperation.newInsert(Realization.CONTENT_URI)
-                  .withValues(values) }
-      false
+      def relzInsertOps = 
+         for(values <- realizationValues) yield { 
+            ContentProviderOperation.newInsert(Realization.CONTENT_URI)
+                  .withValues(values)
+                  .build() 
+         }
+      
+      def sqInsertOps = {
+         val indexRange = 0 until relzInsertOps.length * 2 by 2
+         val relzIndexIterator = indexRange.toIterator
+         import StudentGroup.Columns
+         for(relz <- params; groupCode = relz.getCode) yield {
+            ContentProviderOperation.newInsert(StudentGroup.CONTENT_URI)
+               .withValueBackReference(Columns.REALIZATION_ID, relzIndexIterator.next)
+               .withValue(Columns.CODE, groupCode)
+               .build()
+         }
+      }
+      
+      def operations = {
+         val listOfOperationLists = relzInsertOps :: sqInsertOps :: Nil
+         listOfOperationLists flatMap(_.zipWithIndex) sortBy(_._2) map(_._1)
+      }
+      
+      try{
+         import collection.JavaConversions.seqAsJavaList
+         resolver.applyBatch(LukkariContract.AUTHORITY, new ArrayList( operations))
+      } catch {
+         case ex: OperationApplicationException =>
+            Log.d(Tag, "Applying patch failed")
+            false
+      }
+      
+      true
    }
    
    override protected def onPostExecute(result: Boolean) {
