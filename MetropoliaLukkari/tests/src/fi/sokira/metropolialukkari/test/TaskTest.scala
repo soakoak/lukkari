@@ -1,16 +1,18 @@
 package fi.sokira.metropolialukkari.test
 
 import android.test.ProviderTestCase2
+import junit.framework.Assert.assertEquals
 import fi.sokira.metropolialukkari.models.MpoliaRealization
 import fi.sokira.metropolialukkari.models.MpoliaStudentGroup
 import fi.sokira.lukkari.provider.LukkariProvider
 import fi.sokira.lukkari.provider.LukkariContract
 import fi.sokira.lukkari.provider.LukkariContract._
-import fi.sokira.lukkari.provider.test.TestUtils.makeDate
 import java.util.Date
 import java.util.ArrayList
 import fi.sokira.metropolialukkari.MpoliaRealizationAddingTask
 import android.os.AsyncTask
+import android.database.Cursor
+import java.util.Calendar
 
 class TaskTest extends ProviderTestCase2[LukkariProvider](
                               classOf[LukkariProvider], 
@@ -42,9 +44,16 @@ class TaskTest extends ProviderTestCase2[LukkariProvider](
          testCase.setName(name)
          testCase.setStartDate(startDate)
          testCase.setEndDate(endDate)
-         import collection.JavaConversions.seqAsJavaList
-         testCase.setStudentGroups(new ArrayList(studentGroups))
+//         import collection.JavaConversions.seqAsJavaList
+//         testCase.setStudentGroups(new ArrayList(studentGroups))
          testCase
+      }
+      
+      def makeDate(year: Int, month: Int, day: Int) = {
+         val cal = Calendar.getInstance
+         cal.setTimeInMillis(0)
+         cal.set(year, month, day)
+         cal.getTime
       }
       
       val testCode1 = "T3ST1-1"
@@ -74,18 +83,38 @@ class TaskTest extends ProviderTestCase2[LukkariProvider](
       
 
       def assertRealization(realization: MpoliaRealization) = { 
-         
          def resolver = getMockContentResolver
          
-         def queryRealization(selectionArgs: Array[String]) = {
-            import Realization.Columns._
-            val projection = Array(CODE, NAME, START_DATE, END_DATE)
-            val selection = CODE + " = ?"
+         def queryRealization(projection: Array[String], 
+               selection: String, selectionArgs: Array[String]) = {
             resolver.query(Realization.CONTENT_URI, 
                   projection, selection, selectionArgs, null)
+         }
+
+         import Realization.Columns._
+         val projection = Array(CODE, NAME, START_DATE, END_DATE)
+         val selection = CODE + " = ?"
+         val selectionArgs = Array(realization.getCode)
+         val cursor = queryRealization(projection, selection, selectionArgs)
+         
+         def assertColumn(expected: Any, columnName: String) {
+            val idx = cursor.getColumnIndex(columnName)
+            val compared = expected match {
+               case _: String => cursor.getString(idx)
+               case _: Long => cursor.getLong(idx)
+            }
+            assertEquals(expected, compared)
+         }
+         
+         assertColumn(realization.getCode, CODE)
+         assertColumn(realization.getName, NAME)
+         assertColumn(realization.getStartDate.getTime, START_DATE)
+         assertColumn(realization.getEndDate.getTime, END_DATE)
+         
+         //TODO student_group testaus
       }
-         //TODO jatka tästä
-         val cursor = queryRealization(Array(realization.getCode))
-      }
+      
+      assertRealization(testCase1)
+      assertRealization(testCase2)
    }
 }

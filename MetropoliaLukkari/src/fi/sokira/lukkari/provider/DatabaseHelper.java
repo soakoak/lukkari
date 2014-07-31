@@ -94,7 +94,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 	/* 
 	 * http://stackoverflow.com/a/3266882/2039863
-	 * Foreign keyt ovat oletuksena pois p‰‰lt‰.
+	 * Foreign keyt ovat oletuksena pois p√§√§lt√§.
 	 */
 	@Override
 	public void onOpen(SQLiteDatabase db) {

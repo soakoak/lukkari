@@ -127,8 +127,8 @@ public class ProviderinsertionTest extends ProviderTestCase2<LukkariProvider> {
       assertCursorColumn(lukkariId, cursor, allColumns[5]);
       assertCursorColumn(TEST_LUKKARI_NAME, cursor, allColumns[6]);
       
-      //TODO voisiko testej‰ eritell‰?
-      //TODO haku lukkarin nimell‰
+      //TODO voisiko testej√§ eritell√§?
+      //TODO haku lukkarin nimell√§
    }
    
    private Uri insertRealization(long lukkariId, String code, String name, Date startDate, Date endDate) {

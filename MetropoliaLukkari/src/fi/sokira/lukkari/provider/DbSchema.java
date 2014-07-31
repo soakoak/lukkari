@@ -130,4 +130,5 @@ public interface DbSchema {
       + " INNER JOIN " + TBL_REALIZATION + " AS rz"
          + " ON lr." + COL_ID_REALIZATION + " = rz." + COL_ID;
 
+	//TODO view: StudentGroup | Realization | Reservation matching realization & group
 }

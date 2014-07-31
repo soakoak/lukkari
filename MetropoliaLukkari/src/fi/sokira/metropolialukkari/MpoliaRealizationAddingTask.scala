@@ -12,15 +12,17 @@ import fi.sokira.metropolialukkari.models.MpoliaRealization
 import java.util.ArrayList
 import android.content.OperationApplicationException
 import android.util.Log
+import java.util.{List => JList}
+import java.lang.{Boolean => JBoolean}
 
-class MpoliaRealizationAddingTask(context: Context) extends AsyncTask[MpoliaRealization, Void, Boolean] {
+class MpoliaRealizationAddingTask(context: Context) extends MpoliaRealizationAddingTaskHelp {
 
    private val TestLukkariName = "testilukkari"
    private val Tag = getClass.getSimpleName
    
    private def resolver = context.getContentResolver
    
-   override protected def doInBackground(params: MpoliaRealization*): Boolean = {
+   override protected def doInBackground1(params: Array[MpoliaRealization]): JBoolean = {
       import Contract._
       
       def realizationSeqAsContentValueSeq(realizations: Seq[MpoliaRealization]):
@@ -48,7 +50,7 @@ class MpoliaRealizationAddingTask(context: Context) extends AsyncTask[MpoliaReal
                   .build() 
          }
       
-      def sqInsertOps = {
+      def sqInsertOps: Seq[ContentProviderOperation] = {
          val indexRange = 0 until relzInsertOps.length * 2 by 2
          val relzIndexIterator = indexRange.toIterator
          import StudentGroup.Columns
@@ -61,26 +63,29 @@ class MpoliaRealizationAddingTask(context: Context) extends AsyncTask[MpoliaReal
       }
       
       def operations = {
-         val listOfOperationLists = relzInsertOps :: sqInsertOps :: Nil
+         val listOfOperationLists: List[Seq[ContentProviderOperation]] = 
+            relzInsertOps :: sqInsertOps :: Nil
          listOfOperationLists flatMap(_.zipWithIndex) sortBy(_._2) map(_._1)
       }
       
       try{
          import collection.JavaConversions.seqAsJavaList
          resolver.applyBatch(LukkariContract.AUTHORITY, new ArrayList( operations))
+         JBoolean.TRUE
       } catch {
          case ex: OperationApplicationException =>
             Log.d(Tag, "Applying patch failed")
-            false
-      }
-      
-      true
+            JBoolean.FALSE
+         case ex: Exception =>
+            Log.d(Tag, "Something unexpected happened upon applying patch.")
+            JBoolean.FALSE
+      }  
    }
    
-   override protected def onPostExecute(result: Boolean) {
+   override protected def onPostExecute(result: JBoolean) {
       val text = result match {
-         case true => "Toteutukset lis‰tty onnistuneeti."
-         case false => "Virhe lis‰tess‰toteutuksia."
+         case JBoolean.TRUE => "Toteutukset lis√§tty onnistuneeti."
+         case JBoolean.FALSE => "Virhe lis√§tess√§toteutuksia."
       }
       Toast.makeText(context, text, Toast.LENGTH_LONG).show()
    }
