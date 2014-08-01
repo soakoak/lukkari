@@ -97,6 +97,9 @@ class TaskTest extends ProviderTestCase2[LukkariProvider](
          val selectionArgs = Array(realization.getCode)
          val cursor = queryRealization(projection, selection, selectionArgs)
          
+         val expectedEntries = 1
+         assertEquals( expectedEntries, cursor.getCount)
+         
          def assertColumn(expected: Any, columnName: String) {
             val idx = cursor.getColumnIndex(columnName)
             val compared = expected match {
@@ -105,6 +108,8 @@ class TaskTest extends ProviderTestCase2[LukkariProvider](
             }
             assertEquals(expected, compared)
          }
+         
+         cursor.moveToFirst()
          
          assertColumn(realization.getCode, CODE)
          assertColumn(realization.getName, NAME)

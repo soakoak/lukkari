@@ -87,6 +87,9 @@ class MpoliaRealizationAddingTask(context: Context) extends MpoliaRealizationAdd
          case JBoolean.TRUE => "Toteutukset lisätty onnistuneeti."
          case JBoolean.FALSE => "Virhe lisätessätoteutuksia."
       }
-      Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+      //NullPointer exception?
+//      Toast.makeText(context, "", Toast.LENGTH_LONG).show()
+      
+      Log.i(Tag, text)
    }
 }
