@@ -162,7 +162,7 @@ public interface DbSchema {
 	final static String CREATE_VIEW_STUDENT_GROUP = 
 	      "CREATE VIEW IF NOT EXISTS " + VIEW_STUDENT_GROUP + " AS "
 	         + "SELECT"
-            + COL_ID
+            + " " + COL_ID
             + ", " + COL_CODE
             + ", " + COL_ID_REALIZATION
             + ", " + COL_ID_RESERVATION
