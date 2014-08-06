@@ -2,8 +2,6 @@ package fi.sokira.lukkari.provider;
 
 import android.provider.BaseColumns;
 
-//TODO: cascade?
-
 public interface DbSchema {
 	
 	final static String DATABASE_NAME = "lukkari.db";
@@ -17,14 +15,17 @@ public interface DbSchema {
 							= "realization_to_student_group";
 	final static String TBL_RESERVATION_TO_STUDENT_GROUP 
 							= "reservation_to_student_group";
-	final static String VIEW_DATA = "data_view";
+	final static String VIEW_RESERVATION = "reservation_view";
 	final static String VIEW_REALIZATION = "realization_view";
+	final static String VIEW_STUDENT_GROUP = "student_group_view";
+	final static String VIEW_STUDENT_GROUP_HELP1 = "student_group_help_view1";
+	final static String VIEW_STUDENT_GROUP_HELP2 = "student_group_help_view2";
 
 	final static String COL_ID = BaseColumns._ID;
-	final static String COL_NAME = "name"; //Nimi
+	final static String COL_NAME = "name";
 	final static String COL_NAME_LUKKARI = "l_name";
 	final static String COL_NAME_REALIZATION = "rz_name";
-	final static String COL_CODE = "code"; //Tunnus
+	final static String COL_CODE = "code";
 	final static String COL_ROOM = "room";
 	final static String COL_START_DATE = "startDate";
 	final static String COL_END_DATE = "endDate";
@@ -94,8 +95,8 @@ public interface DbSchema {
 				", " + "CONSTRAINT unq UNIQUE (" + COL_ID_RESERVATION + ", " + COL_ID_STUDENT_GROUP + ")" +
 			")";
 
-	final static String CREATE_VIEW_DATA_LIST = 
-		"CREATE VIEW IF NOT EXISTS " + VIEW_DATA + " AS "
+	final static String CREATE_VIEW_RESERVATION = 
+		"CREATE VIEW IF NOT EXISTS " + VIEW_RESERVATION + " AS "
 			+ "SELECT"
 			+ " rv." + COL_ID
 			+ ", l." + COL_NAME + " AS " + COL_NAME_LUKKARI 
@@ -130,5 +131,41 @@ public interface DbSchema {
       + " INNER JOIN " + TBL_REALIZATION + " AS rz"
          + " ON lr." + COL_ID_REALIZATION + " = rz." + COL_ID;
 
-	//TODO view: StudentGroup | Realization | Reservation matching realization & group
+	final static String CREATE_VIEW_STUDENT_GROUP_HELP1 =
+	      "CREATE VIEW IF NOT EXISTS " + VIEW_STUDENT_GROUP_HELP1 + " AS "
+	         + "SELECT"
+            + " sg." + COL_ID
+            + ", sg." + COL_CODE
+            + ", rz." + COL_ID + " AS " + COL_ID_REALIZATION
+            + ", rz." + COL_NAME
+            + " FROM " + TBL_STUDENT_GROUP + " AS sg"
+         + " LEFT OUTER JOIN " + TBL_REALIZATION_TO_STUDENT_GROUP + " AS rz2sg"
+            + " ON sg." + COL_ID + " = rz2sg." + COL_ID_STUDENT_GROUP
+         + " LEFT OUTER JOIN " + TBL_REALIZATION + " AS rz"
+            + " ON rz2sg." + COL_ID_REALIZATION + " = rz." + COL_ID;
+            
+	  final static String CREATE_VIEW_STUDENT_GROUP_HELP2 =
+	         "CREATE VIEW IF NOT EXISTS " + VIEW_STUDENT_GROUP_HELP2 + " AS "
+	            + "SELECT"
+	            + " sg." + COL_ID
+	            + ", sg." + COL_CODE
+	            + ", rs." + COL_ID + " AS " + COL_ID_RESERVATION
+	            + ", rs." + COL_ROOM
+	            + ", rs." + COL_ID_REALIZATION
+	            + " FROM " + TBL_STUDENT_GROUP + " AS sg"
+	         + " LEFT OUTER JOIN " + TBL_RESERVATION_TO_STUDENT_GROUP + " AS rs2sg"
+	            + " ON sg." + COL_ID + " = rs2sg." + COL_ID_STUDENT_GROUP
+	         + " LEFT OUTER JOIN " + TBL_RESERVATION + " AS rs"
+	            + " ON rs2sg." + COL_ID_RESERVATION + " = rs." + COL_ID;
+	
+	
+	final static String CREATE_VIEW_STUDENT_GROUP = 
+	      "CREATE VIEW IF NOT EXISTS " + VIEW_STUDENT_GROUP + " AS "
+	         + "SELECT"
+            + COL_ID
+            + ", " + COL_CODE
+            + ", " + COL_ID_REALIZATION
+            + ", " + COL_ID_RESERVATION
+            + " FROM " + VIEW_STUDENT_GROUP_HELP1
+         + " NATURAL LEFT OUTER JOIN " + VIEW_STUDENT_GROUP_HELP2;
 }

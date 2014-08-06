@@ -1,7 +1,6 @@
 package fi.sokira.metropolialukkari;
 
 import java.util.ArrayList;
-import java.util.Collection;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -28,9 +27,7 @@ import fi.sokira.lukkari.provider.LukkariContract.Realization;
 import fi.sokira.metropolialukkari.HakuFragment.OnSearchListener;
 import fi.sokira.metropolialukkari.models.MpoliaRealization;
 import fi.sokira.metropolialukkari.models.MpoliaRealizationResult;
-import fi.sokira.metropolialukkari.models.MpoliaReservation;
 import fi.sokira.metropolialukkari.models.MpoliaReservationResult;
-import fi.sokira.metropolialukkari.models.MpoliaResource;
 import fi.sokira.metropolialukkari.models.MpoliaResult;
 import fi.sokira.metropolialukkari.models.MpoliaResultItem;
 import fi.sokira.metropolialukkari.models.MpoliaStudentGroup;

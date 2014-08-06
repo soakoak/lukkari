@@ -98,7 +98,7 @@ public class DataListLoader extends AsyncTaskLoader<Cursor> {
 	private String formQuery() {
 		SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
 		
-		builder.setTables(DbSchema.VIEW_DATA);
+		builder.setTables(DbSchema.VIEW_RESERVATION);
 		builder.appendWhere( DbSchema.COL_NAME_LUKKARI);
 		builder.appendWhere(" = ");
 		builder.appendWhereEscapeString(mLukkariName);
