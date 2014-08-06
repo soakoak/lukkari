@@ -1,24 +1,29 @@
 package fi.sokira.metropolialukkari.test
 
 import android.test.ProviderTestCase2
-import junit.framework.Assert.assertEquals
-import fi.sokira.metropolialukkari.models.MpoliaRealization
-import fi.sokira.metropolialukkari.models.MpoliaStudentGroup
-import fi.sokira.lukkari.provider.LukkariProvider
-import fi.sokira.lukkari.provider.LukkariContract
-import fi.sokira.lukkari.provider.LukkariContract._
-import java.util.Date
-import java.util.ArrayList
-import fi.sokira.metropolialukkari.MpoliaRealizationAddingTask
 import android.os.AsyncTask
 import android.database.Cursor
-import java.util.Calendar
+import java.util.{Date, ArrayList, List => JList, Calendar}
+import junit.framework.Assert
+import scala.collection.JavaConversions._
+
+import fi.sokira._
+import metropolialukkari.models.{MpoliaRealization, MpoliaStudentGroup}
+import metropolialukkari.MpoliaRealizationAddingTask
+import metropolialukkari.LukkariUtils.RichCursor
+import lukkari.provider
+import provider.{LukkariProvider, LukkariContract}
+import LukkariContract._
+import TaskTest._
+
 
 class TaskTest extends ProviderTestCase2[LukkariProvider](
                               classOf[LukkariProvider], 
                               LukkariContract.AUTHORITY) {
 
    private val Tag = this.getClass.getSimpleName
+   
+   private def resolver = getMockContentResolver
    
    def testRealizationAddingTask {
       val testSgCode1 = "Group_1"
@@ -44,8 +49,7 @@ class TaskTest extends ProviderTestCase2[LukkariProvider](
          testCase.setName(name)
          testCase.setStartDate(startDate)
          testCase.setEndDate(endDate)
-//         import collection.JavaConversions.seqAsJavaList
-//         testCase.setStudentGroups(new ArrayList(studentGroups))
+         testCase.setStudentGroups(new ArrayList(studentGroups))
          testCase
       }
       
@@ -74,17 +78,14 @@ class TaskTest extends ProviderTestCase2[LukkariProvider](
       val testCase2 = makeTestCase(testCode2, testName2, 
             testStartDate2, testEndDate2, testGroupList2)
             
-      val testTask = new MpoliaRealizationAddingTask(getMockContext)
+      val testTask = new MpoliaRealizationAddingTask(getMockContext, false)
       testTask.execute(testCase1, testCase2)
       
       while( testTask.getStatus != AsyncTask.Status.FINISHED) {
          Thread.sleep(500)
       }
-      
 
       def assertRealization(realization: MpoliaRealization) = { 
-         def resolver = getMockContentResolver
-         
          def queryRealization(projection: Array[String], 
                selection: String, selectionArgs: Array[String]) = {
             resolver.query(Realization.CONTENT_URI, 
@@ -92,34 +93,81 @@ class TaskTest extends ProviderTestCase2[LukkariProvider](
          }
 
          import Realization.Columns._
-         val projection = Array(CODE, NAME, START_DATE, END_DATE)
+         val projection = Array(ID, CODE, NAME, START_DATE, END_DATE)
          val selection = CODE + " = ?"
          val selectionArgs = Array(realization.getCode)
          val cursor = queryRealization(projection, selection, selectionArgs)
          
-         val expectedEntries = 1
-         assertEquals( expectedEntries, cursor.getCount)
-         
-         def assertColumn(expected: Any, columnName: String) {
-            val idx = cursor.getColumnIndex(columnName)
-            val compared = expected match {
-               case _: String => cursor.getString(idx)
-               case _: Long => cursor.getLong(idx)
-            }
-            assertEquals(expected, compared)
-         }
+         cursor.assertIfEmpty()
          
          cursor.moveToFirst()
          
-         assertColumn(realization.getCode, CODE)
-         assertColumn(realization.getName, NAME)
-         assertColumn(realization.getStartDate.getTime, START_DATE)
-         assertColumn(realization.getEndDate.getTime, END_DATE)
+         cursor.assertColumn(realization.getCode, CODE)
+         cursor.assertColumn(realization.getName, NAME)
+         cursor.assertColumn(realization.getStartDate.getTime, START_DATE)
+         cursor.assertColumn(realization.getEndDate.getTime, END_DATE)
          
-         //TODO student_group testaus
+         cursor.getLong(Realization.Columns.ID)
       }
       
-      assertRealization(testCase1)
-      assertRealization(testCase2)
+      def assertStudentGroups(realizationId: Long, 
+            studentGroups: JList[MpoliaStudentGroup]) = {
+         
+         def queryStudentGroup(projection: Array[String], 
+               selection: String, selectionArgs: Array[String]) = {
+            
+            resolver.query(StudentGroup.CONTENT_URI, 
+                  projection, selection, selectionArgs, null)
+         }
+         
+         import StudentGroup.Columns._
+         val projection = Array(CODE)
+         val selection = REALIZATION_ID + " = ?"
+         val selectionArgs = Array(realizationId.toString)
+         val cursor = queryStudentGroup(projection, selection, selectionArgs)
+
+         cursor.assertIfEmpty()
+         
+         cursor.moveToFirst()
+
+         def assertLists[T : Ordering](expected: Seq[T], compared: Seq[T]) {
+            val listOfPairs = (expected.sorted, compared.sorted).zipped
+            for((i, j) <- listOfPairs) {
+               Assert.assertEquals(i, j)
+            }
+         }
+         
+         val expectedCodes = for(group <- studentGroups) yield group.getCode
+         val comparedCodes = cursor.extractColumnAsStringList(CODE)
+         
+         assertLists(expectedCodes, comparedCodes)
+      }
+      
+      var realizationIdx =  assertRealization(testCase1)
+      assertStudentGroups(realizationIdx, testCase1.getStudentGroups)
+      realizationIdx = assertRealization(testCase2)
+      assertStudentGroups(realizationIdx, testCase2.getStudentGroups)
    }
+}
+
+object TaskTest {
+   
+   implicit class CursorAsserter(cursor: Cursor) {
+      
+      def assertIfEmpty() {
+         if(cursor.getCount() < 1) {
+            Assert.fail("Empty cursor")
+         }
+      }
+      
+      def assertColumn(expected: Any, columnName: String) {
+         val idx = cursor.getColumnIndex(columnName)
+         val compared = expected match {
+            case _: String => cursor.getString(idx)
+            case _: Long => cursor.getLong(idx)
+         }
+         Assert.assertEquals(expected, compared)
+      }
+   }
+
 }

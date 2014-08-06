@@ -1,29 +1,32 @@
 package fi.sokira.metropolialukkari
 
-import android.content.ContentProviderOperation
+import java.lang.{Boolean => JBoolean}
+import scala.collection.JavaConversions._
+import android.content.{ContentProviderOperation => CPOperation}
 import android.content.ContentValues
 import android.content.Context
+import android.content.OperationApplicationException
 import android.net.Uri
-import android.os.AsyncTask
+import android.util.Log
 import android.widget.Toast
-import fi.sokira.lukkari.provider.{LukkariContract => Contract}
-import fi.sokira.lukkari.provider.LukkariContract
+import fi.sokira.lukkari.provider.{LukkariContract => LContract}
 import fi.sokira.metropolialukkari.models.MpoliaRealization
 import java.util.ArrayList
-import android.content.OperationApplicationException
-import android.util.Log
-import java.util.{List => JList}
-import java.lang.{Boolean => JBoolean}
 
-class MpoliaRealizationAddingTask(context: Context) extends MpoliaRealizationAddingTaskHelp {
+class MpoliaRealizationAddingTask protected[metropolialukkari] (
+      val context: Context,
+      val toastsEnabled: Boolean
+) extends MpoliaRealizationAddingTaskHelp {
 
    private val TestLukkariName = "testilukkari"
    private val Tag = getClass.getSimpleName
    
+   def this(context: Context) = this(context, true)
+   
    private def resolver = context.getContentResolver
    
    override protected def doInBackground1(params: Array[MpoliaRealization]): JBoolean = {
-      import Contract._
+      import LContract._
       
       def realizationSeqAsContentValueSeq(realizations: Seq[MpoliaRealization]):
             Seq[ContentValues] = {
@@ -45,32 +48,33 @@ class MpoliaRealizationAddingTask(context: Context) extends MpoliaRealizationAdd
       
       def relzInsertOps = 
          for(values <- realizationValues) yield { 
-            ContentProviderOperation.newInsert(Realization.CONTENT_URI)
+            CPOperation.newInsert(Realization.CONTENT_URI)
                   .withValues(values)
                   .build() 
          }
       
-      def sqInsertOps: Seq[ContentProviderOperation] = {
+      def studentGroupInOps: Seq[CPOperation] = {
          val indexRange = 0 until relzInsertOps.length * 2 by 2
          val relzIndexIterator = indexRange.toIterator
          import StudentGroup.Columns
-         for(relz <- params; groupCode = relz.getCode) yield {
-            ContentProviderOperation.newInsert(StudentGroup.CONTENT_URI)
-               .withValueBackReference(Columns.REALIZATION_ID, relzIndexIterator.next)
-               .withValue(Columns.CODE, groupCode)
+         for{relz <- params
+            backReference = relzIndexIterator.next
+            studentGroup <- relz.getStudentGroups } yield {
+            CPOperation.newInsert(StudentGroup.CONTENT_URI)
+               .withValueBackReference(Columns.REALIZATION_ID, backReference)
+               .withValue(Columns.CODE, studentGroup.getCode)
                .build()
          }
       }
       
       def operations = {
-         val listOfOperationLists: List[Seq[ContentProviderOperation]] = 
-            relzInsertOps :: sqInsertOps :: Nil
+         val listOfOperationLists: List[Seq[CPOperation]] = 
+            relzInsertOps :: studentGroupInOps :: Nil
          listOfOperationLists flatMap(_.zipWithIndex) sortBy(_._2) map(_._1)
       }
       
       try{
-         import collection.JavaConversions.seqAsJavaList
-         resolver.applyBatch(LukkariContract.AUTHORITY, new ArrayList( operations))
+         resolver.applyBatch(LContract.AUTHORITY, new ArrayList( operations))
          JBoolean.TRUE
       } catch {
          case ex: OperationApplicationException =>
@@ -78,6 +82,7 @@ class MpoliaRealizationAddingTask(context: Context) extends MpoliaRealizationAdd
             JBoolean.FALSE
          case ex: Exception =>
             Log.d(Tag, "Something unexpected happened upon applying patch.")
+            Log.d(Tag, ex.getStackTraceString)
             JBoolean.FALSE
       }  
    }
@@ -85,11 +90,13 @@ class MpoliaRealizationAddingTask(context: Context) extends MpoliaRealizationAdd
    override protected def onPostExecute(result: JBoolean) {
       val text = result match {
          case JBoolean.TRUE => "Toteutukset lisätty onnistuneeti."
-         case JBoolean.FALSE => "Virhe lisätessätoteutuksia."
+         case JBoolean.FALSE => "Virhe lisätessä toteutuksia."
       }
-      //NullPointer exception?
-//      Toast.makeText(context, "", Toast.LENGTH_LONG).show()
+
+      if( toastsEnabled) {
+         Toast.makeText(context, "", Toast.LENGTH_LONG).show()
+      }
       
-      Log.i(Tag, text)
+      Log.d(Tag, text)
    }
 }

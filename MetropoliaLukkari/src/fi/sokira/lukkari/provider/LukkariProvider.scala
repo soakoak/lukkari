@@ -170,12 +170,8 @@ class LukkariProvider extends ContentProvider {
       
       def doQuery: Cursor = {
          val dao = matchUriToDao(uri)
-         
-         dao match {
-            case _ => dao.query(
-               readableDb, projection, selection, selectionArgs, sortOrder)
-               //TODO studentgroup-kolumnien käyttö haussa
-         }
+         dao.query(
+            readableDb, projection, selection, selectionArgs, sortOrder)
       }
       
       val cursor = doQuery
@@ -189,6 +185,8 @@ class LukkariProvider extends ContentProvider {
       def doUpdate: Int =  {
          val dao = matchUriToDao(uri) 
          dao.update(writeableDb, values, selection, selectionArgs)
+         
+         //TODO ota extra-kolumnit huomioon.
       }
       
       val updateCount = doUpdate
@@ -281,6 +279,7 @@ object LukkariProvider {
 
       override val Tag = "StudentGroupDao"
       override val tableName = StudentGroup.PATH
+      override val queryTableName = DbSchema.VIEW_STUDENT_GROUP
       
       import StudentGroup.Columns._
       override val uniqueColumns = List(CODE)
